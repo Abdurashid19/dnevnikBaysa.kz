@@ -1,0 +1,1 @@
+# dnevnikBaysa.kz
