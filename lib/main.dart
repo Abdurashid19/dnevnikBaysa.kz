@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
-import 'screens/home_page.dart';
+import 'widgets/bottom_nav_bar.dart'; // Импортируем BottomNavBar
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,6 +25,8 @@ class MyApp extends StatelessWidget {
         Provider<AuthService>(create: (_) => AuthService()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+
         title: 'BaysaApp',
         navigatorKey: navigatorKey, // Передаем ключ навигатора в приложение
         home: const Wrapper(), // Используем новый экран Wrapper
@@ -47,11 +49,9 @@ class Wrapper extends StatelessWidget {
         } else {
           final userData = snapshot.data;
           if (userData != null && userData['uid'] != null) {
-            // Если данные о пользователе сохранены, перенаправляем на HomePage
-            return HomePage(
-              user: FirebaseAuth.instance
-                  .currentUser!, // Мы можем использовать текущего пользователя
-            );
+            // Если данные о пользователе сохранены, перенаправляем на BottomNavBar
+            return BottomNavBar(
+                user: FirebaseAuth.instance.currentUser!); // Меню с навигацией
           } else {
             // Если данных нет, показываем LoginScreen
             return const LoginScreen();

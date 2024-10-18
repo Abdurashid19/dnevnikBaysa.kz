@@ -65,7 +65,7 @@ class LoginScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            HomePage(user: user), // Передаем объект User
+                            HomePage(), // Передаем объект User
                       ),
                     );
                   }
