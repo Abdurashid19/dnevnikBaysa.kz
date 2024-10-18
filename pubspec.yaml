@@ -40,8 +40,8 @@ dependencies:
   # aad_oauth: ^1.0.1
   # flutter_webview_plugin: ^0.4.0
   flutter_inappwebview: ^6.1.5
-  firebase_auth: ^4.1.1
-  firebase_core: ^2.1.1
+  firebase_auth: ^5.3.1
+  firebase_core: ^3.6.0
   # firebase_auth_oauth: ^1.2.2
   # firebase_auth_oauth: ^1.2.2
 

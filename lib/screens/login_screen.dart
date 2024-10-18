@@ -55,18 +55,49 @@ class LoginScreen extends StatelessWidget {
                     // Вход через Microsoft
                     final provider = OAuthProvider("microsoft.com");
 
-                    // Открываем Microsoft OAuth через Firebase
-                    final UserCredential userCredential =
-                        await FirebaseAuth.instance.signInWithPopup(provider);
+                    provider.setCustomParameters({
+                      'tenant':
+                          'd424a0c8-160a-46e7-8127-0d7b243d9809' // Ваш tenant
+                    });
 
-                    // Успешный вход
-                    final user = userCredential.user;
+                    // Выполняем аутентификацию
+                    final UserCredential userCredential = await FirebaseAuth
+                        .instance
+                        .signInWithProvider(provider);
+
+                    // Получаем информацию о пользователе
+                    final User? user = userCredential.user;
+
+                    // Проверяем, что авторизация прошла успешно
                     if (user != null) {
-                      print("Вход выполнен: ${user.displayName}");
+                      print(
+                          "Успешная авторизация пользователя: ${user.displayName}");
+                    } else {
+                      print("Авторизация не удалась.");
                     }
                   } catch (e) {
                     print("Ошибка авторизации: $e");
+
+                    // Показываем ошибку через AlertDialog
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text("Ошибка авторизации"),
+                          content: Text("Не удалось выполнить вход: $e"),
+                          actions: [
+                            TextButton(
+                              child: const Text("ОК"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   }
+
                   //
                 },
                 style: ElevatedButton.styleFrom(

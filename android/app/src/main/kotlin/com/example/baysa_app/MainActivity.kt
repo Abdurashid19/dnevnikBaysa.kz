@@ -1,4 +1,4 @@
-package com.example.baysa_app
+package kz.mobile.baysa 
 
 import io.flutter.embedding.android.FlutterActivity
 
