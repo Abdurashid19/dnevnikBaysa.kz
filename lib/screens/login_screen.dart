@@ -1,7 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import 'home_page.dart'; // Импорт HomePage
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -51,54 +52,23 @@ class LoginScreen extends StatelessWidget {
                   );
 
                   // Попытка авторизации через Microsoft
-                  try {
-                    // Вход через Microsoft
-                    final provider = OAuthProvider("microsoft.com");
+                  final user =
+                      await Provider.of<AuthService>(context, listen: false)
+                          .signInWithMicrosoft(context);
 
-                    provider.setCustomParameters({
-                      'tenant':
-                          'd424a0c8-160a-46e7-8127-0d7b243d9809' // Ваш tenant
-                    });
+                  // Закрываем индикатор загрузки
+                  Navigator.of(context).pop();
 
-                    // Выполняем аутентификацию
-                    final UserCredential userCredential = await FirebaseAuth
-                        .instance
-                        .signInWithProvider(provider);
-
-                    // Получаем информацию о пользователе
-                    final User? user = userCredential.user;
-
-                    // Проверяем, что авторизация прошла успешно
-                    if (user != null) {
-                      print(
-                          "Успешная авторизация пользователя: ${user.displayName}");
-                    } else {
-                      print("Авторизация не удалась.");
-                    }
-                  } catch (e) {
-                    print("Ошибка авторизации: $e");
-
-                    // Показываем ошибку через AlertDialog
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text("Ошибка авторизации"),
-                          content: Text("Не удалось выполнить вход: $e"),
-                          actions: [
-                            TextButton(
-                              child: const Text("ОК"),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        );
-                      },
+                  if (user != null) {
+                    // Если авторизация успешна, перенаправляем на HomePage и передаем данные пользователя
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            HomePage(user: user), // Передаем объект User
+                      ),
                     );
                   }
-
-                  //
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue.shade700, // Цвет кнопки
@@ -127,41 +97,6 @@ class LoginScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // Метод для показа сообщения об ошибке
-  void _showErrorDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ошибка'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Домашняя страница'),
-      ),
-      body: const Center(
-        child: Text('Добро пожаловать в приложение после авторизации!'),
       ),
     );
   }
