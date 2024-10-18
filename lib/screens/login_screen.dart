@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
-import 'home_page.dart'; // Импорт HomePage
+import 'list_activities.dart'; // Импорт HomePage
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -65,7 +65,7 @@ class LoginScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            HomePage(), // Передаем объект User
+                            ListActivities(), // Передаем объект User
                       ),
                     );
                   }

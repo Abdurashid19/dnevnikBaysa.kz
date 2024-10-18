@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/home_page.dart'; // Подключаем главный экран (HomePage)
+import '../screens/list_activities.dart'; // Подключаем главный экран (HomePage)
 
 class BottomNavBar extends StatefulWidget {
   final User user; // Передаем объект User
@@ -16,14 +16,14 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
   // Список виджетов для Учителя
   static const List<Widget> _teacherPages = <Widget>[
-    HomePage(),
+    ListActivities(),
     Center(child: Text('Задания')),
     Center(child: Text('Студенты')),
   ];
 
   // Список виджетов для Ученика
   static const List<Widget> _studentPages = <Widget>[
-    HomePage(),
+    ListActivities(),
     Center(child: Text('Уроки')),
     Center(child: Text('Оценки')),
   ];
