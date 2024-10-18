@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "262630947835",
+    "project_id": "dnevnikbaysa",
+    "storage_bucket": "dnevnikbaysa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:262630947835:android:b2131b6c1a6089bfa0695e",
+        "android_client_info": {
+          "package_name": "kz.mobile.baysa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBg42r4Bw2X1Sd7RS6lHHVgKiWF4afXXKY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
