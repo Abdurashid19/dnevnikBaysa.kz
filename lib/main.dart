@@ -10,10 +10,8 @@ import 'widgets/bottom_nav_bar.dart'; // Импортируем BottomNavBar
 final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Обеспечиваем инициализацию биндингов Flutter
-  await Firebase
-      .initializeApp(); // Инициализация Firebase перед запуском приложения
+  WidgetsFlutterBinding.ensureInitialized(); // Инициализация Flutter
+  await Firebase.initializeApp(); // Инициализация Firebase
   runApp(MyApp());
 }
 
@@ -26,7 +24,6 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-
         title: 'BaysaApp',
         navigatorKey: navigatorKey, // Передаем ключ навигатора в приложение
         home: const Wrapper(), // Используем новый экран Wrapper
@@ -40,12 +37,14 @@ class Wrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
+    return FutureBuilder<Map<String, String?>>(
       future: _checkUserLoggedIn(),
-      builder: (context, AsyncSnapshot<Map<String, String?>> snapshot) {
+      builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           // Показываем индикатор загрузки, пока ждем данные
           return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Center(child: Text('Произошла ошибка'));
         } else {
           final userData = snapshot.data;
           if (userData != null && userData['uid'] != null) {
