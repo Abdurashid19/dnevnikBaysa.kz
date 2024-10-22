@@ -1,7 +1,9 @@
+import 'package:baysa_app/screens/dopScreens/lesson_details_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ListActivities extends StatefulWidget {
   const ListActivities({Key? key}) : super(key: key);
@@ -35,6 +37,8 @@ class _ListActivitiesState extends State<ListActivities> {
 
   bool _isLoading = true;
   List<Map<String, dynamic>> _lessons = [];
+
+  bool _isLoadingLessons = false;
 
   @override
   void initState() {
@@ -82,13 +86,13 @@ class _ListActivitiesState extends State<ListActivities> {
         _classMap[cls['clsName']] = cls['id'];
       }
 
-      // Устанавливаем выбранный класс по умолчанию
-      _selectedClass = _classes.isNotEmpty ? _classes[0] : null;
+      // // Устанавливаем выбранный класс по умолчанию
+      // _selectedClass = _classes.isNotEmpty ? _classes[0] : null;
 
-      // Загружаем предметы для выбранного класса
-      if (_selectedClass != null) {
-        await _loadSubjects(_classMap[_selectedClass]!);
-      }
+      // // Загружаем предметы для выбранного класса
+      // if (_selectedClass != null) {
+      //   await _loadSubjects(_classMap[_selectedClass]!);
+      // }
 
       setState(() {
         _isLoading = false;
@@ -124,6 +128,10 @@ class _ListActivitiesState extends State<ListActivities> {
   }
 
   Future<void> _updateLessons() async {
+    setState(() {
+      _isLoadingLessons = true; // Начинаем загрузку
+    });
+
     try {
       final classId = _classMap[_selectedClass]!;
       final subjectId = _subjectMap[_selectedSubject]!;
@@ -149,7 +157,24 @@ class _ListActivitiesState extends State<ListActivities> {
       });
     } catch (e) {
       print('Ошибка при обновлении данных: $e');
+    } finally {
+      setState(() {
+        _isLoadingLessons = false; // Завершаем загрузку
+      });
     }
+  }
+
+  // Метод для выхода и очистки данных
+  Future<void> _logout() async {
+    // Очищаем данные в SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    // Выходим из Firebase
+    await FirebaseAuth.instance.signOut();
+
+    // Переход на экран входа
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
   // Открытие диалога выбора даты
@@ -186,6 +211,13 @@ class _ListActivitiesState extends State<ListActivities> {
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 10, 84, 255),
         elevation: 4,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            onPressed: _logout,
+            tooltip: 'Выйти',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -196,11 +228,11 @@ class _ListActivitiesState extends State<ListActivities> {
                 children: [
                   // ФИО преподавателя
                   Text(
-                    'ФИО: $_fio',
+                    '$_fio',
                     style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
                   // Поля для выбора дат с возможностью изменения
                   Row(
@@ -214,27 +246,28 @@ class _ListActivitiesState extends State<ListActivities> {
                               'Конец периода', _endDateController)),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
                   // Выпадающие меню для класса и предмета
                   _buildClassDropdown(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   _buildSubjectDropdown(),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
 
                   // Кнопка обновить
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _updateLessons,
-                      child: const Text('Обновить'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 50, vertical: 15),
-                        textStyle: const TextStyle(fontSize: 18),
+                  if (_selectedClass != null && _selectedSubject != null)
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: _updateLessons,
+                        child: const Text('Обновить'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 50, vertical: 15),
+                          textStyle: const TextStyle(fontSize: 18),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   _buildLessonsTable(),
                 ],
               ),
@@ -243,92 +276,235 @@ class _ListActivitiesState extends State<ListActivities> {
   }
 
   Widget _buildLessonsTable() {
+    if (_isLoadingLessons) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (_lessons.isEmpty) {
       return const Center(child: Text('Нет данных для отображения.'));
     }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Класс: $_selectedClass',
+          '$_selectedClass    $_selectedSubject',
           style: const TextStyle(
-              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         const SizedBox(height: 10),
-        Table(
-          border: TableBorder.all(),
-          columnWidths: const {
-            0: FractionColumnWidth(0.1),
-            1: FractionColumnWidth(0.2),
-            2: FractionColumnWidth(0.2),
-            3: FractionColumnWidth(0.5),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _lessons.length,
+          itemBuilder: (context, index) {
+            final lesson = _lessons[index];
+
+            // Форматируем дату
+            String formattedDate = '';
+            try {
+              DateTime parsedDate = DateTime.parse(lesson['date2']);
+              formattedDate = DateFormat('dd.MM.yyyy').format(parsedDate);
+            } catch (e) {
+              formattedDate = lesson['date2'];
+            }
+
+            // Проверяем тип урока: СОР, СОЧ или Экзамен
+            bool isSor = [11, 12, 13, 14].contains(lesson['gradeId']);
+            bool isSoch = lesson['gradeId'] == 15;
+            bool isExam = lesson['gradeId'] == 7;
+
+            Color cardColor = isSor
+                ? Colors.green.shade300
+                : isSoch
+                    ? const Color.fromARGB(255, 229, 151, 115)
+                    : isExam
+                        ? Colors.lightBlue.shade300
+                        : Colors.white;
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LessonDetailsPage(lesson: lesson),
+                  ),
+                );
+              },
+              child: Card(
+                color: cardColor,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Первая строка: Дата, Период и Оценки
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            formattedDate,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${lesson['typePeriod']}',
+                          ),
+                          const SizedBox(width: 10),
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text: 'Оценки: ',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '${lesson['cntRates']}',
+                                  style: const TextStyle(color: Colors.black87),
+                                ),
+                                if (isSor || isSoch || isExam)
+                                  TextSpan(
+                                    text: '/${lesson['cntStudents']}',
+                                    style: const TextStyle(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text: 'Макс: ',
+                                  style: TextStyle(
+                                    // fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '${lesson['maxPoint']}',
+                                  style: const TextStyle(color: Colors.black87),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Вторая строка: Тема урока
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            // const TextSpan(
+                            //   text: 'Тема: ',
+                            //   style: TextStyle(
+                            //     fontWeight: FontWeight.bold,
+                            //     color: Colors.black87,
+                            //   ),
+                            // ),
+                            TextSpan(
+                              text: lesson['themeName'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.normal,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_teacherId != lesson['teacherId'])
+                        const SizedBox(height: 8),
+                      if (_teacherId != lesson['teacherId'])
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: lesson['teacherName'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
           },
-          children: [
-            _buildTableHeader(),
-            ..._lessons.map((lesson) => _buildLessonRow(lesson)).toList(),
-          ],
         ),
       ],
     );
   }
 
-  TableRow _buildTableHeader() {
-    return TableRow(
-      decoration: const BoxDecoration(color: Colors.grey),
-      children: const [
-        Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text('№', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text('Дата', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text('Период', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text('Тема', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-      ],
-    );
-  }
+  // TableRow _buildTableHeader() {
+  //   return TableRow(
+  //     decoration: const BoxDecoration(color: Colors.grey),
+  //     children: const [
+  //       Padding(
+  //         padding: EdgeInsets.all(8.0),
+  //         child: Text('№', style: TextStyle(fontWeight: FontWeight.bold)),
+  //       ),
+  //       Padding(
+  //         padding: EdgeInsets.all(8.0),
+  //         child: Text('Дата', style: TextStyle(fontWeight: FontWeight.bold)),
+  //       ),
+  //       Padding(
+  //         padding: EdgeInsets.all(8.0),
+  //         child: Text('Период', style: TextStyle(fontWeight: FontWeight.bold)),
+  //       ),
+  //       Padding(
+  //         padding: EdgeInsets.all(8.0),
+  //         child: Text('Тема', style: TextStyle(fontWeight: FontWeight.bold)),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  TableRow _buildLessonRow(Map<String, dynamic> lesson) {
-    return TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text('${lesson['id']}'),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text('${lesson['date2']}'),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text('${lesson['typePeriod']}'),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text('${lesson['themeName']}'),
-        ),
-      ],
-    );
-  }
+  // TableRow _buildLessonRow(Map<String, dynamic> lesson) {
+  //   return TableRow(
+  //     children: [
+  //       Padding(
+  //         padding: const EdgeInsets.all(8.0),
+  //         child: Text('${lesson['id']}'),
+  //       ),
+  //       Padding(
+  //         padding: const EdgeInsets.all(8.0),
+  //         child: Text('${lesson['date2']}'),
+  //       ),
+  //       Padding(
+  //         padding: const EdgeInsets.all(8.0),
+  //         child: Text('${lesson['typePeriod']}'),
+  //       ),
+  //       Padding(
+  //         padding: const EdgeInsets.all(8.0),
+  //         child: Text('${lesson['themeName']}'),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   // Виджет для поля даты
   Widget _buildDateField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16)),
         const SizedBox(height: 5),
         TextFormField(
           controller: controller,
           decoration: InputDecoration(
+            labelText: '$label',
             border: OutlineInputBorder(),
             contentPadding: const EdgeInsets.symmetric(horizontal: 10),
             suffixIcon: IconButton(
@@ -347,61 +523,78 @@ class _ListActivitiesState extends State<ListActivities> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Класс', style: TextStyle(fontSize: 16)),
         const SizedBox(height: 5),
-        DropdownButtonFormField<String>(
-          value: _selectedClass,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
+        Container(
+          child: DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              labelText: 'Класс',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: const BorderSide(color: Colors.grey),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 10.0,
+                horizontal: 10.0,
+              ),
+            ),
+            isDense: true,
+            isExpanded: true,
+            items: _classes.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            value: _selectedClass != null && _selectedClass!.isNotEmpty
+                ? _selectedClass
+                : null,
+            onChanged: (String? newValue) async {
+              // Загружаем предметы для выбранного класса
+              await _loadSubjects(_classMap[newValue]!);
+              setState(() {
+                _selectedClass = newValue!;
+              });
+            },
           ),
-          onChanged: (String? newValue) async {
-            setState(() {
-              _selectedClass = newValue!;
-            });
-            // Загружаем предметы для выбранного класса
-            await _loadSubjects(_classMap[_selectedClass]!);
-          },
-          items: _classes.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
         ),
       ],
     );
   }
 
-  // Виджет для выпадающего списка предметов
+// Виджет для выпадающего списка предметов
   Widget _buildSubjectDropdown() {
-    // Если список предметов содержит только один элемент, выбираем его автоматически
-    if (_subjects.length == 1) {
-      _selectedSubject = _subjects[0];
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Предмет', style: TextStyle(fontSize: 16)),
-        const SizedBox(height: 5),
-        DropdownButtonFormField<String>(
-          value: _selectedSubject != null && _selectedSubject!.isNotEmpty
-              ? _selectedSubject
-              : null, // Показать пустое поле, если нет значения
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
+        const SizedBox(height: 10),
+        Container(
+          child: DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              labelText: 'Предмет',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: const BorderSide(color: Colors.grey),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 10.0,
+                horizontal: 10.0,
+              ),
+            ),
+            isDense: true,
+            isExpanded: true,
+            items: _subjects.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            value: _selectedSubject,
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedSubject = newValue!;
+              });
+            },
           ),
-          onChanged: (String? newValue) {
-            setState(() {
-              _selectedSubject = newValue!;
-            });
-          },
-          items: _subjects.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
         ),
       ],
     );

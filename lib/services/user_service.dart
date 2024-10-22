@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
 class UserService {
-  final String baseUrl = 'https://dnevnik.baysa.kz/tWcf/Service1.svc/';
+  // final String baseUrl = 'https://dnevnik.baysa.kz/tWcf/Service1.svc/';
+  final String baseUrl = 'https://dnevnik.baysa.kz/tWcfTest/Service1.svc/';
 
   // Метод для проверки пользователя по email
   Future<void> checkUserMs(String userName, BuildContext context) async {

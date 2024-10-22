@@ -26,7 +26,21 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'BaysaApp',
         navigatorKey: navigatorKey, // Передаем ключ навигатора в приложение
-        home: const Wrapper(), // Используем новый экран Wrapper
+        initialRoute: '/', // Задаем начальный маршрут
+        routes: {
+          '/': (context) => const Wrapper(), // Главная страница
+          '/login': (context) => const LoginScreen(), // Экран авторизации
+          '/home': (context) =>
+              BottomNavBar(user: FirebaseAuth.instance.currentUser!),
+        },
+        onUnknownRoute: (settings) {
+          // Обработчик для неопределенных маршрутов
+          return MaterialPageRoute(
+            builder: (context) => const Scaffold(
+              body: Center(child: Text('Страница не найдена')),
+            ),
+          );
+        },
       ),
     );
   }
