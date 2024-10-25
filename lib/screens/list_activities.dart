@@ -313,23 +313,29 @@ class _ListActivitiesState extends State<ListActivities> {
             bool isSor = [11, 12, 13, 14].contains(lesson['gradeId']);
             bool isSoch = lesson['gradeId'] == 15;
             bool isExam = lesson['gradeId'] == 7;
-
-            Color cardColor = isSor
-                ? Colors.green.shade300
-                : isSoch
-                    ? const Color.fromARGB(255, 229, 151, 115)
-                    : isExam
-                        ? Colors.lightBlue.shade300
-                        : Colors.white;
+            bool error = lesson['sorWithoutLesson'] == 1 &&
+                !(lesson['gradeId'] == 1 || lesson['maxPoint'] == 0);
+            // Логика для изменения цвета карточки
+            Color cardColor = Colors.white; // По умолчанию белый цвет
+            if (error) {
+              cardColor = Colors.red.shade300;
+            } else if (isSor) {
+              cardColor = Colors.green.shade300;
+            } else if (isSoch) {
+              cardColor = const Color.fromARGB(255, 229, 151, 115);
+            } else if (isExam) {
+              cardColor = Colors.lightBlue.shade300;
+            }
+            // Логика для подсветки карточки, если количество студентов, не получивших оценку, больше нуля
+            // if ((lesson['cntStudents'] - lesson['cntRates'] > 0) &&
+            //     !(lesson['gradeId'] == 1 || lesson['maxPoint'] == 0)) {
+            //   cardColor = Colors.red.shade300;
+            // }
 
             return GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LessonDetailsPage(lesson: lesson),
-                  ),
-                );
+                _showActionDialog(
+                    context, lesson); // Показать диалог выбора действия
               },
               child: Card(
                 color: cardColor,
@@ -386,7 +392,6 @@ class _ListActivitiesState extends State<ListActivities> {
                                 const TextSpan(
                                   text: 'Макс: ',
                                   style: TextStyle(
-                                    // fontWeight: FontWeight.bold,
                                     color: Colors.black87,
                                   ),
                                 ),
@@ -404,13 +409,6 @@ class _ListActivitiesState extends State<ListActivities> {
                       RichText(
                         text: TextSpan(
                           children: [
-                            // const TextSpan(
-                            //   text: 'Тема: ',
-                            //   style: TextStyle(
-                            //     fontWeight: FontWeight.bold,
-                            //     color: Colors.black87,
-                            //   ),
-                            // ),
                             TextSpan(
                               text: lesson['themeName'],
                               style: const TextStyle(
@@ -445,6 +443,104 @@ class _ListActivitiesState extends State<ListActivities> {
           },
         ),
       ],
+    );
+  }
+
+// Метод для показа диалога с выбором действия
+  void _showActionDialog(BuildContext context, Map<String, dynamic> lesson) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content:
+              // Row(
+              //   crossAxisAlignment: CrossAxisAlignment.center,
+              //   children: [
+              //     Container(
+              //       alignment: FractionalOffset.topRight,
+              //       child: IconButton(
+              //         onPressed: () {
+              //           Navigator.pop(context);
+              //         },
+              //         icon: const Icon(Icons.clear),
+              //       ),
+              //     ),
+              //     const Text('Title'),
+              //   ],
+              // ),
+              Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Выберите действие',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Закрываем диалог
+                },
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            ButtonBar(
+              alignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(
+                  width: 160, // Задаем одинаковую ширину для кнопок
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              LessonDetailsPage(lesson: lesson),
+                        ),
+                      );
+
+                      if (result == 'success') {
+                        Navigator.of(context).pop(); // Закрываем диалог
+
+                        _updateLessons();
+                        // print('VSEE OKKK');
+                      }
+                    },
+                    child: const Text('Редактировать'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 160, // Задаем одинаковую ширину для кнопок
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Закрываем диалог
+                      print('Оценки нажаты');
+                    },
+                    child: const Text('Оценки'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 

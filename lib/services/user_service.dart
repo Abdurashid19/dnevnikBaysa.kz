@@ -5,16 +5,13 @@ import 'package:flutter/material.dart';
 
 class UserService {
   // final String baseUrl = 'https://dnevnik.baysa.kz/tWcf/Service1.svc/';
-  final String baseUrl = 'https://dnevnik.baysa.kz/tWcfTest/Service1.svc/';
+  final String baseUrl = 'https://dnevnik.baysa.kz/tWcfTest/Service1.svc';
 
   // Метод для проверки пользователя по email
   Future<void> checkUserMs(String userName, BuildContext context) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl}checkUserMs?userName=$userName'),
-        headers: {
-          'accept': 'application/json',
-        },
+        Uri.parse('$baseUrl/checkUserMs?userName=$userName'),
       );
 
       if (response.statusCode == 200) {
@@ -140,6 +137,97 @@ class UserService {
       print('Ошибка: $e');
     }
     return []; // Возвращаем пустой список в случае ошибки
+  }
+
+  // Метод для получения списка типов занятий
+  Future<List<Map<String, dynamic>>> getGradeTypes(
+      int teacherId, String sid, BuildContext context) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/getGradeTypes?teacherId=$teacherId&sid=$sid'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          final gradeTypes = data['lstGradeType'] as List<dynamic>;
+          print('Типы занятий: $gradeTypes');
+          return gradeTypes.map((e) => e as Map<String, dynamic>).toList();
+        }
+      } else {
+        throw Exception('Ошибка получения типов занятий');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+    }
+    return []; // Возвращаем пустой список в случае ошибки
+  }
+
+  // Метод для получения списка тем
+  Future<List<Map<String, dynamic>>> getThemes(
+      int subjectId, int classId, int schoolYear, int teacherId, String sid,
+      {required int lessonId, required BuildContext context}) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getThemes?predmet=$subjectId&classId=$classId&schoolYear=$schoolYear&teacherId=$teacherId&sid=$sid&lessonId=$lessonId'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          final themes = data['lstPredmet'] as List<dynamic>;
+          print('Темы занятий: $themes');
+          return themes.map((e) => e as Map<String, dynamic>).toList();
+        }
+      } else {
+        throw Exception('Ошибка получения тем');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+    }
+    return []; // Возвращаем пустой список в случае ошибки
+  }
+
+  // Метод для сохранения изм
+  recLesson({
+    required int recId,
+    required int classId,
+    required String date,
+    required int subjectId,
+    required int teacherId,
+    required int themeId,
+    required int maxPoint,
+    required int gradeType,
+    required String sid,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/recLesson?recId=$recId&classId=$classId&date3string=$date&predmetId=$subjectId&teacherId=$teacherId&themeId=$themeId&maxPoint=$maxPoint&gradeType=$gradeType&sid=$sid&teacherId2=0&schoolYear=$schoolYear'),
+        headers: {
+          'accept': 'application/json, text/plain, */*',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          print('Урок сохранен успешно.');
+          return data;
+        }
+      } else {
+        throw Exception('Ошибка сохранения урока.');
+      }
+    } catch (e) {
+      print('Ошибка при сохранении урока: $e');
+    }
+    return false;
   }
 
   // Общий метод для обработки ответа
