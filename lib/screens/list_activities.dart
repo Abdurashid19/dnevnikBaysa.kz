@@ -1,3 +1,5 @@
+import 'package:baysa_app/models/error_dialog.dart';
+import 'package:baysa_app/models/success_dialog.dart';
 import 'package:baysa_app/screens/dopScreens/lesson_details_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -447,101 +449,120 @@ class _ListActivitiesState extends State<ListActivities> {
   }
 
 // Метод для показа диалога с выбором действия
-  void _showActionDialog(BuildContext context, Map<String, dynamic> lesson) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content:
-              // Row(
-              //   crossAxisAlignment: CrossAxisAlignment.center,
-              //   children: [
-              //     Container(
-              //       alignment: FractionalOffset.topRight,
-              //       child: IconButton(
-              //         onPressed: () {
-              //           Navigator.pop(context);
-              //         },
-              //         icon: const Icon(Icons.clear),
-              //       ),
-              //     ),
-              //     const Text('Title'),
-              //   ],
-              // ),
-              Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Выберите действие',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Закрываем диалог
-                },
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            ButtonBar(
-              alignment: MainAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  width: 160, // Задаем одинаковую ширину для кнопок
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              LessonDetailsPage(lesson: lesson),
-                        ),
-                      );
+  void _showActionDialog(
+      BuildContext context, Map<String, dynamic> lesson) async {
+    final prefs = await SharedPreferences.getInstance();
+    final _teacherId = prefs.getInt('userId');
 
-                      if (result == 'success') {
-                        Navigator.of(context).pop(); // Закрываем диалог
-
-                        _updateLessons();
-                        // print('VSEE OKKK');
-                      }
-                    },
-                    child: const Text('Редактировать'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
+    if (_teacherId == lesson['teacherId']) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Выберите действие',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: 160, // Задаем одинаковую ширину для кнопок
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Закрываем диалог
-                      print('Оценки нажаты');
-                    },
-                    child: const Text('Оценки'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.green,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Закрываем диалог
+                  },
                 ),
               ],
             ),
-          ],
-        );
-      },
-    );
+            actions: <Widget>[
+              ButtonBar(
+                alignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  SizedBox(
+                    width: 160, // Задаем одинаковую ширину для кнопок
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                LessonDetailsPage(lesson: lesson),
+                          ),
+                        );
+
+                        if (result == 'success') {
+                          Navigator.of(context).pop(); // Закрываем диалог
+                          _updateLessons();
+                        }
+                      },
+                      child: const Text('Редактировать'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Закрываем диалог
+                        print('Оценки нажаты');
+                      },
+                      child: const Text('Оценки'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => ErrorDialog(
+          text: 'Урок введен другим учителем',
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      );
+
+      // showDialog(
+      //   context: context,
+      //   builder: (BuildContext context) => AlertDialog(
+      //     content: const Text(
+      //       'Урок введен другим учителем',
+      //       textAlign: TextAlign.center,
+      //       style: TextStyle(fontSize: 16),
+      //     ),
+      //     actions: <Widget>[
+      //       TextButton(
+      //         onPressed: () {
+      //           Navigator.of(context).pop(); // Закрываем диалог
+      //         },
+      //         child: const Text('ОК'),
+      //       ),
+      //     ],
+      //   ),
+      // );
+    }
   }
 
   // TableRow _buildTableHeader() {

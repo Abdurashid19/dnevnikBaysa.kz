@@ -1,3 +1,4 @@
+import 'package:baysa_app/models/cst_class.dart';
 import 'package:flutter/material.dart';
 
 class SuccessDialog extends StatelessWidget {
@@ -10,28 +11,19 @@ class SuccessDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      content: SingleChildScrollView(
-        child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // Выровняем по центру вертикально
-          children: [
-            const Icon(
-              Icons.task_alt,
-              color: Color.fromARGB(221, 12, 184, 0),
-              size: 36.0,
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              // Если нужно, чтобы текст занимал оставшееся пространство
-              child: Text(
-                text,
-                maxLines: null,
-                softWrap: true,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ],
-        ),
+      title: Text(''),
+      content: Row(
+        children: [
+          Icon(
+            Icons.task_alt,
+            color: Cst.accent_color,
+            size: 36.0,
+          ),
+          SizedBox(
+            width: 12,
+          ),
+          Flexible(child: Text('${text}', maxLines: 8, softWrap: true)),
+        ],
       ),
       actions: [
         ElevatedButton(
