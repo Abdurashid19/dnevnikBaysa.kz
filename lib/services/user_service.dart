@@ -191,6 +191,68 @@ class UserService {
     return []; // Возвращаем пустой список в случае ошибки
   }
 
+// Метод для проверки наличия дублирующего урока
+  Future<Map<String, dynamic>?> checkDoubleLesson({
+    required int classId,
+    required String date,
+    required int subjectId,
+    required int gradeType,
+    required String sid,
+    required BuildContext context,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/checkDoubleLesson?classId=$classId&date3=$date&predmetId=$subjectId&gradeType=$gradeType'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          print('Duplicate lesson check passed: $data');
+          return data;
+        }
+      } else {
+        throw Exception('Ошибка при проверке дублирующего урока.');
+      }
+    } catch (e) {
+      print('Ошибка при проверке дублирующего урока: $e');
+    }
+    return null; // Возвращаем null в случае ошибки
+  }
+
+// Метод для проверки урока в расписании
+  Future<Map<String, dynamic>?> checkWithSchedule({
+    required int classId,
+    required int subjectId,
+    required int teacherId,
+    required String date,
+    required String sid,
+    required BuildContext context,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/checkWithSchedule?classId=$classId&subjectId=$subjectId&teacherId=$teacherId&dt1=$date'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          print('Schedule check passed: $data');
+          return data;
+        }
+      } else {
+        throw Exception('Ошибка при проверке расписания урока.');
+      }
+    } catch (e) {
+      print('Ошибка при проверке расписания урока: $e');
+    }
+    return null; // Возвращаем null в случае ошибки
+  }
+
   // Метод для сохранения изм
   recLesson({
     required int recId,
@@ -228,6 +290,60 @@ class UserService {
       print('Ошибка при сохранении урока: $e');
     }
     return false;
+  }
+
+  // Метод выборки классов для добавления урока
+  Future<List<Map<String, dynamic>>> getClassesForAddLesson(
+      int teacherId, String sid, int schoolYear, BuildContext context) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getClassesForAddLesson?teacherId=$teacherId&sid=$sid&schoolYear=$schoolYear'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        // Check if the response is successful
+        if (_handleResponse(data, context)) {
+          final classes = data['lstClass'] as List<dynamic>;
+          print('Classes for add lesson: $classes');
+          return classes.map((e) => e as Map<String, dynamic>).toList();
+        }
+      } else {
+        throw Exception('Failed to fetch classes');
+      }
+    } catch (e) {
+      print('Error fetching classes: $e');
+    }
+    return [];
+  }
+
+  // Метод выборки предметов для выбранного класса при добавлении урока
+  Future<List<Map<String, dynamic>>> getPredmetsForAddLesson(int teacherId,
+      int classId, String sid, int schoolYear, BuildContext context) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getPredmetsForAddLesson?teacherId=$teacherId&classId=$classId&sid=$sid&schoolYear=$schoolYear'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        // Check if the response is successful
+        if (_handleResponse(data, context)) {
+          final subjects = data['lstPredmet'] as List<dynamic>;
+          print('Subjects for add lesson: $subjects');
+          return subjects.map((e) => e as Map<String, dynamic>).toList();
+        }
+      } else {
+        throw Exception('Failed to fetch subjects');
+      }
+    } catch (e) {
+      print('Error fetching subjects: $e');
+    }
+    return [];
   }
 
   // Общий метод для обработки ответа
