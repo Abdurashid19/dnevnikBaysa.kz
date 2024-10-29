@@ -63,13 +63,15 @@ class LoginScreen extends StatelessWidget {
 
                   if (user != null) {
                     // Если авторизация успешна, перенаправляем на HomePage и передаем данные пользователя
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ListActivities(), // Передаем объект User
-                      ),
-                    );
+                    // Navigator.pushReplacement(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) =>
+                    //         ListActivities(),а// Передаем объект User
+                    //   ),
+                    // );
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/home', (route) => false);
                   }
                 },
                 style: ElevatedButton.styleFrom(
