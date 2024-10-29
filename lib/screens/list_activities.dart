@@ -1,3 +1,4 @@
+import 'package:baysa_app/models/cst_class.dart';
 import 'package:baysa_app/models/error_dialog.dart';
 import 'package:baysa_app/models/success_dialog.dart';
 import 'package:baysa_app/screens/dopScreens/add_lesson_page.dart';
@@ -209,11 +210,10 @@ class _ListActivitiesState extends State<ListActivities> {
       appBar: AppBar(
         title: const Text(
           'Список занятий',
-          style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 10, 84, 255),
-        elevation: 4,
+        scrolledUnderElevation: 0.0,
+        backgroundColor: Cst.backgroundAppBar,
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -222,59 +222,64 @@ class _ListActivitiesState extends State<ListActivities> {
           ),
         ],
       ),
+      // Устанавливаем цвет фона Scaffold
+      backgroundColor: Cst.backgroundApp,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ФИО преподавателя
-                  Text(
-                    '$_fio',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
+              padding: const EdgeInsets.all(5.0),
+              child: CustomCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ФИО преподавателя
+                    Text(
+                      '$_fio',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
 
-                  // Поля для выбора дат с возможностью изменения
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildDateField(
-                              'Начало периода', _startDateController)),
-                      const SizedBox(width: 16), // Отступ между полями
-                      Expanded(
-                          child: _buildDateField(
-                              'Конец периода', _endDateController)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+                    // Поля для выбора дат с возможностью изменения
+                    Row(
+                      children: [
+                        Expanded(
+                            child: _buildDateField(
+                                'Начало периода', _startDateController)),
+                        const SizedBox(width: 16), // Отступ между полями
+                        Expanded(
+                            child: _buildDateField(
+                                'Конец периода', _endDateController)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
 
-                  // Выпадающие меню для класса и предмета
-                  _buildClassDropdown(),
-                  const SizedBox(height: 10),
-                  _buildSubjectDropdown(),
-                  const SizedBox(height: 20),
+                    // Выпадающие меню для класса и предмета
+                    _buildClassDropdown(),
+                    const SizedBox(height: 10),
+                    _buildSubjectDropdown(),
+                    const SizedBox(height: 20),
 
-                  // Кнопка обновить
-                  if (_selectedClass != null && _selectedSubject != null)
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: _updateLessons,
-                        child: const Text('Обновить'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 50, vertical: 15),
-                          textStyle: const TextStyle(fontSize: 18),
+                    // Кнопка обновить
+                    if (_selectedClass != null && _selectedSubject != null)
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _updateLessons,
+                          child: const Text('Обновить'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 50, vertical: 15),
+                            textStyle: const TextStyle(fontSize: 18),
+                          ),
                         ),
                       ),
-                    ),
-                  const SizedBox(height: 10),
-                  _buildLessonsTable(),
-                ],
+                    const SizedBox(height: 10),
+                    _buildLessonsTable(),
+                  ],
+                ),
               ),
             ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -284,7 +289,7 @@ class _ListActivitiesState extends State<ListActivities> {
         },
         child: const Icon(
           Icons.add,
-          color: Color.fromARGB(255, 255, 255, 255),
+          color: Colors.white,
         ),
         backgroundColor: Colors.blue,
       ),
@@ -353,80 +358,90 @@ class _ListActivitiesState extends State<ListActivities> {
                 _showActionDialog(
                     context, lesson); // Показать диалог выбора действия
               },
-              child: Card(
-                color: cardColor,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Первая строка: Дата, Период и Оценки
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Text(
-                            formattedDate,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '${lesson['typePeriod']}',
-                          ),
-                          const SizedBox(width: 10),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                const TextSpan(
-                                  text: 'Оценки: ',
-                                  style: TextStyle(
+              child: CustomCard(
+                backgroundColor: cardColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Первая строка: Дата, Период и Оценки
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          formattedDate,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${lesson['typePeriod']}',
+                        ),
+                        const SizedBox(width: 10),
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Оценки: ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '${lesson['cntRates']}',
+                                style: const TextStyle(color: Colors.black87),
+                              ),
+                              if (isSor || isSoch || isExam)
+                                TextSpan(
+                                  text: '/${lesson['cntStudents']}',
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
                                   ),
                                 ),
-                                TextSpan(
-                                  text: '${lesson['cntRates']}',
-                                  style: const TextStyle(color: Colors.black87),
-                                ),
-                                if (isSor || isSoch || isExam)
-                                  TextSpan(
-                                    text: '/${lesson['cntStudents']}',
-                                    style: const TextStyle(
-                                      color: Colors.redAccent,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                const TextSpan(
-                                  text: 'Макс: ',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                  ),
+                        ),
+                        const SizedBox(width: 10),
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Макс: ',
+                                style: TextStyle(
+                                  color: Colors.black87,
                                 ),
-                                TextSpan(
-                                  text: '${lesson['maxPoint']}',
-                                  style: const TextStyle(color: Colors.black87),
-                                ),
-                              ],
+                              ),
+                              TextSpan(
+                                text: '${lesson['maxPoint']}',
+                                style: const TextStyle(color: Colors.black87),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Вторая строка: Тема урока
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: lesson['themeName'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.normal,
+                              color: Colors.black87,
                             ),
                           ),
                         ],
                       ),
+                    ),
+                    if (_teacherId != lesson['teacherId'])
                       const SizedBox(height: 8),
-                      // Вторая строка: Тема урока
+                    if (_teacherId != lesson['teacherId'])
                       RichText(
                         text: TextSpan(
                           children: [
                             TextSpan(
-                              text: lesson['themeName'],
+                              text: lesson['teacherName'],
                               style: const TextStyle(
                                 fontWeight: FontWeight.normal,
                                 color: Colors.black87,
@@ -435,24 +450,7 @@ class _ListActivitiesState extends State<ListActivities> {
                           ],
                         ),
                       ),
-                      if (_teacherId != lesson['teacherId'])
-                        const SizedBox(height: 8),
-                      if (_teacherId != lesson['teacherId'])
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: lesson['teacherName'],
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             );
@@ -563,53 +561,6 @@ class _ListActivitiesState extends State<ListActivities> {
     );
   }
 
-  // TableRow _buildTableHeader() {
-  //   return TableRow(
-  //     decoration: const BoxDecoration(color: Colors.grey),
-  //     children: const [
-  //       Padding(
-  //         padding: EdgeInsets.all(8.0),
-  //         child: Text('№', style: TextStyle(fontWeight: FontWeight.bold)),
-  //       ),
-  //       Padding(
-  //         padding: EdgeInsets.all(8.0),
-  //         child: Text('Дата', style: TextStyle(fontWeight: FontWeight.bold)),
-  //       ),
-  //       Padding(
-  //         padding: EdgeInsets.all(8.0),
-  //         child: Text('Период', style: TextStyle(fontWeight: FontWeight.bold)),
-  //       ),
-  //       Padding(
-  //         padding: EdgeInsets.all(8.0),
-  //         child: Text('Тема', style: TextStyle(fontWeight: FontWeight.bold)),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  // TableRow _buildLessonRow(Map<String, dynamic> lesson) {
-  //   return TableRow(
-  //     children: [
-  //       Padding(
-  //         padding: const EdgeInsets.all(8.0),
-  //         child: Text('${lesson['id']}'),
-  //       ),
-  //       Padding(
-  //         padding: const EdgeInsets.all(8.0),
-  //         child: Text('${lesson['date2']}'),
-  //       ),
-  //       Padding(
-  //         padding: const EdgeInsets.all(8.0),
-  //         child: Text('${lesson['typePeriod']}'),
-  //       ),
-  //       Padding(
-  //         padding: const EdgeInsets.all(8.0),
-  //         child: Text('${lesson['themeName']}'),
-  //       ),
-  //     ],
-  //   );
-  // }
-
   // Виджет для поля даты
   Widget _buildDateField(String label, TextEditingController controller) {
     return Column(
@@ -641,6 +592,7 @@ class _ListActivitiesState extends State<ListActivities> {
         const SizedBox(height: 5),
         Container(
           child: DropdownButtonFormField<String>(
+            dropdownColor: Colors.white,
             decoration: InputDecoration(
               labelText: 'Класс',
               border: OutlineInputBorder(
@@ -684,6 +636,7 @@ class _ListActivitiesState extends State<ListActivities> {
         const SizedBox(height: 10),
         Container(
           child: DropdownButtonFormField<String>(
+            dropdownColor: Colors.white,
             decoration: InputDecoration(
               labelText: 'Предмет',
               border: OutlineInputBorder(

@@ -224,6 +224,7 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0.0,
         title: const Text(
           'Редактирование раздела',
           style: TextStyle(color: Colors.white, fontSize: 20),
@@ -291,6 +292,7 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
                           Expanded(
                             child:
                                 DropdownButtonFormField<Map<String, dynamic>>(
+                              dropdownColor: Colors.white,
                               value: _selectedGradeType,
                               items: _gradeTypes
                                   .map((type) =>
@@ -325,6 +327,7 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
                       ),
                       const SizedBox(height: 10),
                       DropdownButtonFormField<Map<String, dynamic>?>(
+                        dropdownColor: Colors.white,
                         value: _selectedTheme ??
                             _themes.firstWhere(
                               (theme) =>

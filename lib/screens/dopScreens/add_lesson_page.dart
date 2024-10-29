@@ -147,6 +147,43 @@ class _AddLessonPageState extends State<AddLessonPage> {
   }
 
   Future<void> _checkAndSaveLesson() async {
+    // Проверка поля "Дата урока"
+    if (_dateController.text.isEmpty) {
+      _showErrorDialog('Пожалуйста, заполните поле: Дата урока');
+      return;
+    }
+
+    // Проверка поля "Класс"
+    if (_selectedClass == null) {
+      _showErrorDialog('Пожалуйста, выберите Класс');
+      return;
+    }
+
+    // Проверка поля "Предмет"
+    if (_selectedSubject == null) {
+      _showErrorDialog('Пожалуйста, выберите Предмет');
+      return;
+    }
+
+    // Проверка поля "Тип занятия"
+    if (_selectedGradeType == null) {
+      _showErrorDialog('Пожалуйста, выберите Тип занятия');
+      return;
+    }
+
+    // Проверка поля "Максимальный балл"
+    if (_maxPointsController.text.isEmpty) {
+      _showErrorDialog('Пожалуйста, заполните поле: Максимальный балл');
+      return;
+    }
+
+    // Проверка поля "Тема урока"
+    if (_selectedTheme == null) {
+      _showErrorDialog('Пожалуйста, выберите Тему урока');
+      return;
+    }
+
+    // Если все поля заполнены, продолжаем выполнение функции
     setState(() => _isLoading = true);
 
     final prefs = await SharedPreferences.getInstance();
@@ -160,7 +197,8 @@ class _AddLessonPageState extends State<AddLessonPage> {
     final dateInput = _dateController.text;
     final dateParsed = DateFormat('dd.MM.yyyy').parse(dateInput);
     final dateFormatted = DateFormat('yyyy-MM-dd').format(dateParsed);
-    // First API Call to check if there's a duplicate lesson
+
+    // Проверка дубликата урока и дальнейшая логика
     final checkDoubleLessonResponse = await _userService.checkDoubleLesson(
       classId: classId,
       date: dateFormatted,
@@ -171,7 +209,7 @@ class _AddLessonPageState extends State<AddLessonPage> {
     );
 
     if (checkDoubleLessonResponse!['retNum'] == 0) {
-      // If no duplicate, make the second API call to check with schedule
+      // Проверка с расписанием, если нет дубликата
       final checkWithScheduleResponse = await _userService.checkWithSchedule(
         classId: classId,
         subjectId: subjectId,
@@ -182,10 +220,9 @@ class _AddLessonPageState extends State<AddLessonPage> {
       );
 
       if (checkWithScheduleResponse!['retNum'] == 0) {
-        // Show dialog if lesson not in schedule
-        _showAddLessonConfirmation(checkWithScheduleResponse!['retStr']);
+        // Показ диалога для подтверждения добавления урока, если не в расписании
+        _showAddLessonConfirmation(checkWithScheduleResponse['retStr']);
       } else {
-        // Handle error case if necessary
         _showErrorDialog('Ошибка при проверке с расписанием');
       }
     } else {
@@ -251,7 +288,7 @@ class _AddLessonPageState extends State<AddLessonPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Ошибка'),
+          // title: const Text('Ошибка'),
           content: Text(message),
           actions: <Widget>[
             TextButton(
@@ -311,6 +348,7 @@ class _AddLessonPageState extends State<AddLessonPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0.0,
         title: const Text('Добавить занятие'),
         backgroundColor: Colors.blue,
       ),
@@ -339,6 +377,7 @@ class _AddLessonPageState extends State<AddLessonPage> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: DropdownButtonFormField<Map<String, dynamic>>(
+                          dropdownColor: Colors.white,
                           value: _selectedClass,
                           items: _classes.map((classItem) {
                             return DropdownMenuItem<Map<String, dynamic>>(
@@ -362,6 +401,7 @@ class _AddLessonPageState extends State<AddLessonPage> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<Map<String, dynamic>>(
+                    dropdownColor: Colors.white,
                     value: _selectedSubject,
                     items: _subjects.map((subjectItem) {
                       return DropdownMenuItem<Map<String, dynamic>>(
@@ -385,6 +425,7 @@ class _AddLessonPageState extends State<AddLessonPage> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<Map<String, dynamic>>(
+                          dropdownColor: Colors.white,
                           value: _selectedGradeType,
                           items: _gradeTypes.map((type) {
                             return DropdownMenuItem<Map<String, dynamic>>(
@@ -418,6 +459,7 @@ class _AddLessonPageState extends State<AddLessonPage> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<Map<String, dynamic>?>(
+                    dropdownColor: Colors.white,
                     value: _selectedTheme,
                     items: _themes
                         .map((theme) => DropdownMenuItem<Map<String, dynamic>?>(
