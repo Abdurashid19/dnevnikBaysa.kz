@@ -85,6 +85,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
         items: isTeacher() ? _teacherMenuItems : _studentMenuItems,
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,
+        backgroundColor: Colors.white,
         onTap: _onItemTapped,
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class Cst {
   static Color accent_color = marketColor('#00C003');
@@ -80,4 +81,78 @@ class CustomCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class CustomElevatedButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final String text;
+  final EdgeInsetsGeometry padding;
+  final double fontSize;
+  final Color backgroundColor;
+  final Color foregroundColor;
+
+  const CustomElevatedButton({
+    Key? key,
+    required this.onPressed,
+    required this.text,
+    this.padding = const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+    this.fontSize = 18,
+    this.backgroundColor = Colors.blue,
+    this.foregroundColor = Colors.white,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      child: Text(text),
+      style: ElevatedButton.styleFrom(
+        padding: padding,
+        textStyle: TextStyle(fontSize: fontSize),
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
+      ),
+    );
+  }
+}
+
+class WarningDialog extends StatelessWidget {
+  final String message;
+  final VoidCallback? onClose;
+
+  const WarningDialog({
+    Key? key,
+    required this.message,
+    this.onClose,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Icon(
+        Icons.warning,
+        size: 50,
+        color: Colors.orange,
+      ),
+      content: Text(
+        message,
+        textAlign: TextAlign.center, // Центрируем текст
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            if (onClose != null) {
+              onClose!();
+            }
+          },
+          child: const Text('ОК'),
+        ),
+      ],
+    );
+  }
+}
+
+String formatDate(DateTime date) {
+  return DateFormat('dd.MM.yyyy').format(date);
 }

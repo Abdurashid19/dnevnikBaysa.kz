@@ -11,20 +11,28 @@ class SuccessDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(''),
-      content: Row(
-        children: [
-          Icon(
-            Icons.task_alt,
-            color: Cst.accent_color,
-            size: 36.0,
-          ),
-          SizedBox(
-            width: 12,
-          ),
-          Flexible(child: Text('${text}', maxLines: 8, softWrap: true)),
-        ],
+      title: Icon(
+        Icons.task_alt,
+        size: 50,
+        color: Cst.accent_color,
       ),
+      content: Text(
+        text,
+        textAlign: TextAlign.center, // Центрируем текст
+      ),
+      // content: Row(
+      //   children: [
+      //     Icon(
+      //       Icons.task_alt,
+      //       color: Cst.accent_color,
+      //       size: 36.0,
+      //     ),
+      //     SizedBox(
+      //       width: 12,
+      //     ),
+      //     Flexible(child: Text('${text}', maxLines: 8, softWrap: true)),
+      //   ],
+      // ),
       actions: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(

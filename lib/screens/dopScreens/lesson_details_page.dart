@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:baysa_app/models/cst_class.dart';
 import 'package:baysa_app/models/error_dialog.dart';
 import 'package:baysa_app/models/success_dialog.dart';
 import 'package:baysa_app/services/user_service.dart';
@@ -33,14 +34,17 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
     super.initState();
 
     DateTime parsedDate = DateTime.parse(widget.lesson['date2']);
-    String formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate);
+    String formattedDate = DateFormat('dd.MM.yyyy').format(parsedDate);
 
     _dateController = TextEditingController(text: formattedDate);
     _cntRatesController =
         TextEditingController(text: widget.lesson['cntRates'].toString());
     _maxPointController =
         TextEditingController(text: widget.lesson['maxPoint'].toString());
-
+    // _selectedTheme = {
+    //   'id': widget.lesson['themeId'],
+    //   'name': widget.lesson['themeName'],
+    // };
     _fetchGradeTypes();
     _fetchThemes();
   }
@@ -89,6 +93,9 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
       );
       setState(() {
         _themes = themes;
+        _selectedTheme = _themes.firstWhere(
+          (theme) => theme['id'] == widget.lesson['themeId'],
+        );
       });
     } catch (e) {
       print('Ошибка при загрузке тем: $e');
@@ -223,180 +230,175 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        scrolledUnderElevation: 0.0,
         title: const Text(
           'Редактирование раздела',
-          style: TextStyle(color: Colors.white, fontSize: 20),
         ),
+        scrolledUnderElevation: 0.0,
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 10, 84, 255),
-        elevation: 4,
+        backgroundColor: Cst.backgroundAppBar,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon:
+              const Icon(Icons.arrow_back, color: Color.fromARGB(255, 0, 0, 0)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body:
           isLoading // Показываем прелоудер вместо содержимого, если isLoading == true
               ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              initialValue: widget.lesson['className'],
-                              decoration: const InputDecoration(
-                                labelText: 'Класс',
-                                border: OutlineInputBorder(),
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(5.0),
+                  child: CustomCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: widget.lesson['className'],
+                                decoration: const InputDecoration(
+                                  labelText: 'Класс',
+                                  border: OutlineInputBorder(),
+                                ),
+                                enabled: false,
+                                maxLines: null,
                               ),
-                              enabled: false,
-                              maxLines: null,
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextFormField(
-                              initialValue: widget.lesson['subjectName'],
-                              decoration: const InputDecoration(
-                                labelText: 'Предмет',
-                                border: OutlineInputBorder(),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: widget.lesson['subjectName'],
+                                decoration: const InputDecoration(
+                                  labelText: 'Предмет',
+                                  border: OutlineInputBorder(),
+                                ),
+                                enabled: false,
+                                maxLines: null,
                               ),
-                              enabled: false,
-                              maxLines: null,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _dateController,
-                        decoration: InputDecoration(
-                          labelText: 'Дата',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.calendar_today),
-                            onPressed: () => _selectDate(context),
-                          ),
+                          ],
                         ),
-                        keyboardType: TextInputType.datetime,
-                        maxLines: null,
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child:
-                                DropdownButtonFormField<Map<String, dynamic>>(
-                              dropdownColor: Colors.white,
-                              value: _selectedGradeType,
-                              items: _gradeTypes
-                                  .map((type) =>
-                                      DropdownMenuItem<Map<String, dynamic>>(
-                                        value: type,
-                                        child: Text(type['name']),
-                                      ))
-                                  .toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedGradeType = value;
-                                });
-                              },
-                              decoration: const InputDecoration(
-                                labelText: 'Тип занятия',
-                                border: OutlineInputBorder(),
-                              ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _dateController,
+                          decoration: InputDecoration(
+                            labelText: 'Дата',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.calendar_today),
+                              onPressed: () =>
+                                  _selectDate(context, _dateController),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _maxPointController,
-                              decoration: const InputDecoration(
-                                labelText: 'Максимальный балл',
-                                border: OutlineInputBorder(),
+                          keyboardType: TextInputType.datetime,
+                          maxLines: null,
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child:
+                                  DropdownButtonFormField<Map<String, dynamic>>(
+                                dropdownColor: Colors.white,
+                                value: _selectedGradeType,
+                                items: _gradeTypes
+                                    .map((type) =>
+                                        DropdownMenuItem<Map<String, dynamic>>(
+                                          value: type,
+                                          child: Text(type['name']),
+                                        ))
+                                    .toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedGradeType = value;
+                                  });
+                                },
+                                decoration: const InputDecoration(
+                                  labelText: 'Тип занятия',
+                                  border: OutlineInputBorder(),
+                                ),
                               ),
-                              keyboardType: TextInputType.number,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<Map<String, dynamic>?>(
-                        dropdownColor: Colors.white,
-                        value: _selectedTheme ??
-                            _themes.firstWhere(
-                              (theme) =>
-                                  theme['name'] == widget.lesson['themeName'],
-                              // orElse: () =>
-                              //     null, // Возвращаем null, если совпадений нет
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _maxPointController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Максимальный балл',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
                             ),
-                        items: _themes
-                            .map((theme) =>
-                                DropdownMenuItem<Map<String, dynamic>?>(
-                                  value: theme,
-                                  child: Container(
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<Map<String, dynamic>?>(
+                          dropdownColor: Colors.white,
+                          value: _selectedTheme,
+                          items: _themes
+                              .map((theme) =>
+                                  DropdownMenuItem<Map<String, dynamic>?>(
+                                    value: theme,
                                     child: Text(
                                       theme['name'],
                                       softWrap: true,
                                       maxLines: null,
                                     ),
-                                  ),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedTheme = value;
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Тема урока',
-                          border: OutlineInputBorder(),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedTheme = value;
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Тема урока',
+                            border: OutlineInputBorder(),
+                          ),
+                          isExpanded: true,
                         ),
-                        isExpanded: true,
-                      ),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed:
-                              _selectedTheme != null ? _saveLesson : null,
-                          child: const Text('Сохранить'),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 50, vertical: 15),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: ElevatedButton(
+                            onPressed:
+                                _selectedTheme != null ? _saveLesson : null,
+                            child: const Text('Сохранить'),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 50, vertical: 15),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
+  _selectDate(BuildContext context, TextEditingController controller) async {
     DateTime initialDate;
     try {
-      initialDate = DateFormat('yyyy-MM-dd').parse(_dateController.text);
+      initialDate = DateFormat('dd.MM.yyyy').parse(controller.text);
     } catch (e) {
       initialDate = DateTime.now();
     }
 
     final DateTime? picked = await showDatePicker(
+      locale: const Locale('ru', 'RU'),
       context: context,
       initialDate: initialDate,
-      firstDate: DateTime(2000),
+      firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
-
-    if (picked != null) {
+    if (picked != null && picked != initialDate) {
       setState(() {
-        _dateController.text = DateFormat('yyyy-MM-dd').format(picked);
+        controller.text = DateFormat('dd.MM.yyyy').format(picked);
       });
     }
   }

@@ -10,47 +10,34 @@ class ErrorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      content: SingleChildScrollView(
-        child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // Выровняем по центру вертикально
-          children: [
-            const Icon(
-              Icons.error_outline,
-              color: Colors.redAccent,
-              size: 36.0,
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              // Если нужно, чтобы текст занимал оставшееся пространство
-              child: Text(
-                text,
-                maxLines: null,
-                softWrap: true,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ],
-        ),
-
-        // child: Column(
-        //   crossAxisAlignment: CrossAxisAlignment.start,
-        //   children: [
-        //     const Icon(
-        //       Icons.error_outline,
-        //       color: Colors.redAccent,
-        //       size: 36.0,
-        //     ),
-        //     const SizedBox(height: 15),
-        //     Text(
-        //       text,
-        //       maxLines: null,
-        //       softWrap: true,
-        //       style: const TextStyle(fontSize: 16),
-        //     ),
-        //   ],
-        // ),
+      title: Icon(
+        Icons.error_outline,
+        size: 50,
+        color: Colors.redAccent,
       ),
+      content: Text(
+        text,
+        textAlign: TextAlign.center, // Центрируем текст
+      ),
+
+      // child: Column(
+      //   crossAxisAlignment: CrossAxisAlignment.start,
+      //   children: [
+      //     const Icon(
+      //       Icons.error_outline,
+      //       color: Colors.redAccent,
+      //       size: 36.0,
+      //     ),
+      //     const SizedBox(height: 15),
+      //     Text(
+      //       text,
+      //       maxLines: null,
+      //       softWrap: true,
+      //       style: const TextStyle(fontSize: 16),
+      //     ),
+      //   ],
+      // ),
+
       actions: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(

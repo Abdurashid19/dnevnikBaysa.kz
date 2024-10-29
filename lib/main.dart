@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'widgets/bottom_nav_bar.dart'; // Импортируем BottomNavBar
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -23,6 +24,25 @@ class MyApp extends StatelessWidget {
         Provider<AuthService>(create: (_) => AuthService()),
       ],
       child: MaterialApp(
+        theme: ThemeData.light().copyWith(
+          primaryColor: Colors.blue,
+          dialogBackgroundColor:
+              Colors.white, // Устанавливаем фон диалогов на белый
+          colorScheme: ColorScheme.light(
+            primary: Colors.blue, // Цвет верхней панели диалога
+            onPrimary: Colors.white, // Цвет текста на верхней панели
+            surface: Colors.white, // Фон основной части диалога
+            onSurface: Colors.black, // Цвет текста в диалоге
+          ),
+        ),
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('ru', 'RU'),
+        ],
         debugShowCheckedModeBanner: false,
         title: 'BaysaApp',
         navigatorKey: navigatorKey, // Передаем ключ навигатора в приложение

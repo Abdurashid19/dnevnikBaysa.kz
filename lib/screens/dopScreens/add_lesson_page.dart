@@ -1,3 +1,5 @@
+import 'package:baysa_app/models/cst_class.dart';
+import 'package:baysa_app/models/success_dialog.dart';
 import 'package:baysa_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -78,6 +80,11 @@ class _AddLessonPageState extends State<AddLessonPage> {
         _selectedSubject = null;
         _themes = []; // Clear themes when fetching new subjects
         _isLoading = false;
+        _selectedSubject =
+            _subjects.isNotEmpty && _subjects.length == 1 ? _subjects[0] : null;
+        if (_subjects.isNotEmpty && _subjects.length == 1) {
+          _fetchThemes(_subjects[0]!['id'], _selectedClass!['id']);
+        }
       });
     }
   }
@@ -258,19 +265,28 @@ class _AddLessonPageState extends State<AddLessonPage> {
       if (isSaved['retNum'] == 0) {
         showDialog(
           context: context,
-          builder: (BuildContext context) => AlertDialog(
-            // title: const Text('Успех'),
-            content: const Text('Урок успешно сохранен!'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(this.context).pop('success');
-                },
-                child: const Text('ОК'),
-              ),
-            ],
+          builder: (BuildContext context) => SuccessDialog(
+            text: 'Урок успешно сохранен!',
+            onClose: () {
+              Navigator.of(context).pop(); // Закрываем диалог
+              Navigator.of(this.context)
+                  .pop('success'); // Закрываем экран и передаем результат
+            },
           ),
+
+          // AlertDialog(
+          //   // title: const Text('Успех'),
+          //   content: const Text('Урок успешно сохранен!'),
+          //   actions: <Widget>[
+          //     TextButton(
+          //       onPressed: () {
+          //         Navigator.of(context).pop();
+          //         Navigator.of(this.context).pop('success');
+          //       },
+          //       child: const Text('ОК'),
+          //     ),
+          //   ],
+          // ),
         );
       } else {
         _showErrorDialog(isSaved['retStr'] ?? 'Ошибка при сохранении урока.');
@@ -287,17 +303,8 @@ class _AddLessonPageState extends State<AddLessonPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          // title: const Text('Ошибка'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('ОК'),
-            ),
-          ],
+        return WarningDialog(
+          message: message,
         );
       },
     );
@@ -347,154 +354,161 @@ class _AddLessonPageState extends State<AddLessonPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        scrolledUnderElevation: 0.0,
         title: const Text('Добавить занятие'),
-        backgroundColor: Colors.blue,
+        scrolledUnderElevation: 0.0,
+        centerTitle: true,
+        backgroundColor: Cst.backgroundAppBar,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _dateController,
-                          decoration: InputDecoration(
-                            labelText: 'Дата урока',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.calendar_today),
-                              onPressed: () => _selectDate(context),
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(5.0),
+              child: CustomCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _dateController,
+                            decoration: InputDecoration(
+                              labelText: 'Дата урока',
+                              border: const OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.calendar_today),
+                                onPressed: () => _selectDate(context),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: DropdownButtonFormField<Map<String, dynamic>>(
-                          dropdownColor: Colors.white,
-                          value: _selectedClass,
-                          items: _classes.map((classItem) {
-                            return DropdownMenuItem<Map<String, dynamic>>(
-                              value: classItem,
-                              child: Text(classItem['clsName']),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedClass = value;
-                              _fetchSubjects(value!['id']);
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            labelText: 'Класс',
-                            border: OutlineInputBorder(),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: DropdownButtonFormField<Map<String, dynamic>>(
+                            dropdownColor: Colors.white,
+                            value: _selectedClass,
+                            items: _classes.map((classItem) {
+                              return DropdownMenuItem<Map<String, dynamic>>(
+                                value: classItem,
+                                child: Text(classItem['clsName']),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedClass = value;
+                                _fetchSubjects(value!['id']);
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'Класс',
+                              border: OutlineInputBorder(),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<Map<String, dynamic>>(
-                    dropdownColor: Colors.white,
-                    value: _selectedSubject,
-                    items: _subjects.map((subjectItem) {
-                      return DropdownMenuItem<Map<String, dynamic>>(
-                        value: subjectItem,
-                        child: Text(subjectItem['name']),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedSubject = value;
-                        _fetchThemes(value!['id'], _selectedClass!['id']);
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Предмет',
-                      border: OutlineInputBorder(),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<Map<String, dynamic>>(
-                          dropdownColor: Colors.white,
-                          value: _selectedGradeType,
-                          items: _gradeTypes.map((type) {
-                            return DropdownMenuItem<Map<String, dynamic>>(
-                              value: type,
-                              child: Text(type['name']),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedGradeType = value;
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            labelText: 'Тип занятия',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _maxPointsController,
-                          decoration: const InputDecoration(
-                            labelText: 'Максимальный балл',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<Map<String, dynamic>?>(
-                    dropdownColor: Colors.white,
-                    value: _selectedTheme,
-                    items: _themes
-                        .map((theme) => DropdownMenuItem<Map<String, dynamic>?>(
-                              value: theme,
-                              child: Container(
-                                child: Text(
-                                  theme['name'],
-                                  softWrap: true,
-                                  maxLines: null,
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedTheme = value;
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Тема урока',
-                      border: OutlineInputBorder(),
-                    ),
-                    isExpanded: true,
-                  ),
-                  const SizedBox(height: 10),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await _checkAndSaveLesson(); // Initiates the lesson saving process
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<Map<String, dynamic>>(
+                      dropdownColor: Colors.white,
+                      value: _selectedSubject,
+                      items: _subjects.map((subjectItem) {
+                        return DropdownMenuItem<Map<String, dynamic>>(
+                          value: subjectItem,
+                          child: Text(subjectItem['name']),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedSubject = value;
+                          _fetchThemes(value!['id'], _selectedClass!['id']);
+                        });
                       },
-                      child: const Text('Сохранить'),
+                      decoration: const InputDecoration(
+                        labelText: 'Предмет',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<Map<String, dynamic>>(
+                            dropdownColor: Colors.white,
+                            value: _selectedGradeType,
+                            items: _gradeTypes.map((type) {
+                              return DropdownMenuItem<Map<String, dynamic>>(
+                                value: type,
+                                child: Text(type['name']),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedGradeType = value;
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'Тип занятия',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _maxPointsController,
+                            decoration: const InputDecoration(
+                              labelText: 'Максимальный балл',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<Map<String, dynamic>?>(
+                      dropdownColor: Colors.white,
+                      value: _selectedTheme,
+                      items: _themes
+                          .map((theme) =>
+                              DropdownMenuItem<Map<String, dynamic>?>(
+                                value: theme,
+                                child: Container(
+                                  child: Text(
+                                    theme['name'],
+                                    softWrap: true,
+                                    maxLines: null,
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTheme = value;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Тема урока',
+                        border: OutlineInputBorder(),
+                      ),
+                      isExpanded: true,
+                    ),
+                    const SizedBox(height: 10),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: CustomElevatedButton(
+                        onPressed: () async {
+                          await _checkAndSaveLesson();
+                        },
+                        text: 'Сохранить',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
     );
