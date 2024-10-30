@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/list_activities.dart'; // Подключаем главный экран (HomePage)
 
 class BottomNavBar extends StatefulWidget {
@@ -14,6 +15,8 @@ class BottomNavBar extends StatefulWidget {
 class _BottomNavBarState extends State<BottomNavBar> {
   int _selectedIndex = 0;
 
+  bool? _isTeacher; // Nullable state variable to store user type
+
   // Список виджетов для Учителя
   static const List<Widget> _teacherPages = <Widget>[
     ListActivities(),
@@ -27,13 +30,6 @@ class _BottomNavBarState extends State<BottomNavBar> {
     Center(child: Text('Уроки')),
     Center(child: Text('Оценки')),
   ];
-
-  // Метод для определения, какое меню показывать (Учитель или Ученик)
-  bool isTeacher() {
-    // Пока по дефолту считаем, что это учитель
-    // В будущем можно добавить логику определения роли пользователя
-    return true; // Вернет true, если пользователь — Учитель, иначе Ученик
-  }
 
   // Список названий пунктов меню для Учителя
   static const List<BottomNavigationBarItem> _teacherMenuItems = [
@@ -67,6 +63,24 @@ class _BottomNavBarState extends State<BottomNavBar> {
     ),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _determineUserType();
+  }
+
+  // Метод для определения, является ли пользователь учителем
+  void _determineUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Проверяем, есть ли сохранённый тип пользователя
+    final typeUser = prefs.getInt('typeUser');
+
+    setState(() {
+      _isTeacher = typeUser == 1;
+    });
+  }
+
   // Обработка нажатия на элемент нижнего меню
   void _onItemTapped(int index) {
     setState(() {
@@ -76,13 +90,19 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isTeacher == null) {
+      // Пока тип пользователя не определен, показываем индикатор загрузки
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      body: isTeacher()
-          ? _teacherPages[
-              _selectedIndex] // Если учитель — показываем страницы для учителя
-          : _studentPages[_selectedIndex], // Если ученик — страницы для ученика
+      body: _isTeacher!
+          ? _teacherPages[_selectedIndex]
+          : _studentPages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: isTeacher() ? _teacherMenuItems : _studentMenuItems,
+        items: _isTeacher! ? _teacherMenuItems : _studentMenuItems,
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,
         backgroundColor: Colors.white,

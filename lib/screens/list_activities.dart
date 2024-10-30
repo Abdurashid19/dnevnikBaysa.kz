@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class ListActivities extends StatefulWidget {
   const ListActivities({Key? key}) : super(key: key);
@@ -176,11 +178,16 @@ class _ListActivitiesState extends State<ListActivities> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
 
+    // Очищаем кэш
+    await DefaultCacheManager().emptyCache();
+
     // Выходим из Firebase
     await FirebaseAuth.instance.signOut();
 
-    // Переход на экран входа
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    // Переход на экран входа после небольшой задержки
+    Future.delayed(Duration(seconds: 1), () {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    });
   }
 
   // Открытие диалога выбора даты
