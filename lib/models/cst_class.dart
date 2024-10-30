@@ -54,7 +54,7 @@ class CustomCard extends StatelessWidget {
   const CustomCard({
     Key? key,
     required this.child,
-    this.margin = const EdgeInsets.symmetric(vertical: 8),
+    this.margin = const EdgeInsets.symmetric(vertical: 3),
     this.padding = const EdgeInsets.all(12.0),
     this.borderRadius = 10.0,
     this.borderColor = const Color(0xFFDCE1E6),

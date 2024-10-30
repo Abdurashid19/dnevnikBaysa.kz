@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:baysa_app/models/cst_class.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
@@ -461,17 +462,8 @@ class UserService {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Ошибка'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              child: const Text('ОК'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        return WarningDialog(
+          message: message,
         );
       },
     );

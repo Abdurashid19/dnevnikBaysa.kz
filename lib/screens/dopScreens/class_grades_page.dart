@@ -247,20 +247,6 @@ class _ClassGradesPageState extends State<ClassGradesPage> {
         );
       }
     } catch (e) {
-      print('Ошибка при сохранении оценки: $e');
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Ошибка'),
-          content: Text('Произошла ошибка при сохранении.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Ок'),
-            ),
-          ],
-        ),
-      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -363,7 +349,7 @@ class _ClassGradesPageState extends State<ClassGradesPage> {
           ),
         ],
       ),
-      Text('....'),
+      // Text('....'),
     ]);
   }
 
@@ -1003,7 +989,7 @@ class _ClassGradesPageState extends State<ClassGradesPage> {
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        title: Text('Оценки класса'),
+        title: Text('Оценки урока'),
         centerTitle: true,
         scrolledUnderElevation: 0.0,
         backgroundColor: Cst.backgroundAppBar,
