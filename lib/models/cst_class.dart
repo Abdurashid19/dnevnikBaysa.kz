@@ -156,3 +156,8 @@ class WarningDialog extends StatelessWidget {
 String formatDate(DateTime date) {
   return DateFormat('dd.MM.yyyy').format(date);
 }
+
+String formatDateString(String date) {
+  final parsedDate = DateTime.parse(date);
+  return DateFormat('dd.MM.yyyy').format(parsedDate);
+}

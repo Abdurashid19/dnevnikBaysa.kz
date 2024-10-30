@@ -2,6 +2,7 @@ import 'package:baysa_app/models/cst_class.dart';
 import 'package:baysa_app/models/error_dialog.dart';
 import 'package:baysa_app/models/success_dialog.dart';
 import 'package:baysa_app/screens/dopScreens/add_lesson_page.dart';
+import 'package:baysa_app/screens/dopScreens/class_grades_page.dart';
 import 'package:baysa_app/screens/dopScreens/lesson_details_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -372,11 +373,11 @@ class _ListActivitiesState extends State<ListActivities> {
                         Text(
                           formattedDate,
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 5),
                         Text(
                           '${lesson['typePeriod']}',
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 5),
                         RichText(
                           text: TextSpan(
                             children: [
@@ -402,7 +403,7 @@ class _ListActivitiesState extends State<ListActivities> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 5),
                         RichText(
                           text: TextSpan(
                             children: [
@@ -574,9 +575,20 @@ class _ListActivitiesState extends State<ListActivities> {
                         SizedBox(
                           width: 160,
                           child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.pop(context); // Закрываем диалог
-                              print('Оценки нажаты');
+                            onPressed: () async {
+                              // Переходим на экран с оценками
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ClassGradesPage(lesson: lesson),
+                                ),
+                              );
+
+                              if (result == 'updated') {
+                                // Обновляем данные, если необходимо
+                                _updateLessons(); // Например, метод обновления данных в вашем виджете
+                              }
                             },
                             child: const Text('Оценки'),
                             style: OutlinedButton.styleFrom(
@@ -663,6 +675,7 @@ class _ListActivitiesState extends State<ListActivities> {
               await _loadSubjects(_classMap[newValue]!);
               setState(() {
                 _selectedClass = newValue!;
+                _lessons.clear();
               });
             },
           ),

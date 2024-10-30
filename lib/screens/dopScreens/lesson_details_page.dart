@@ -233,7 +233,7 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
         title: const Text(
-          'Редактирование раздела',
+          'Редактирование урока',
         ),
         scrolledUnderElevation: 0.0,
         centerTitle: true,

@@ -253,6 +253,37 @@ class UserService {
     return null; // Возвращаем null в случае ошибки
   }
 
+  /// Метод для получения списка оценок учеников для определенного урока.
+  Future<Map<String, dynamic>?> getRates({
+    required int lessonId,
+    required int teacherId,
+    required String sid,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    try {
+      // Отправляем запрос к API для получения оценок
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getRates?lessonId=$lessonId&schoolYear=$schoolYear&teacherId=$teacherId&sid=$sid'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          print('Успешное получение данных об оценках: $data');
+          return data;
+        }
+      } else {
+        throw Exception('Ошибка при получении оценок');
+      }
+    } catch (e) {
+      print('Ошибка при получении оценок: $e');
+    }
+    return null; // Возвращаем null в случае ошибки
+  }
+
   // Метод для сохранения изм
   recLesson({
     required int recId,
