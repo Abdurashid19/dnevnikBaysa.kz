@@ -1,6 +1,7 @@
 import 'package:baysa_app/models/cst_class.dart';
 import 'package:baysa_app/services/user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ClassGradesPage extends StatefulWidget {
@@ -81,11 +82,16 @@ class _ClassGradesPageState extends State<ClassGradesPage> {
                     TextField(
                       controller: _gradeController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter
+                            .digitsOnly, // Разрешает ввод только цифр
+                      ],
                       decoration: InputDecoration(
                         labelText: 'Оценка',
                         border: OutlineInputBorder(),
                       ),
                     ),
+
                     SizedBox(height: 10),
                     // Чекбокс для отсутствия
                     Row(
@@ -138,24 +144,31 @@ class _ClassGradesPageState extends State<ClassGradesPage> {
                   ),
                   onPressed: () async {
                     // Проверяем условие: если оценка не пустая и установлен флаг отсутствия
+                    int maxPoint = widget.lesson['maxPoint'] ?? 10;
+
                     if (_gradeController.text.isNotEmpty && _notPresence) {
-                      // Показываем предупреждение
-                      // await showDialog(
-                      //   context: context,
-                      //   builder: (context) => AlertDialog(
-                      //     title: Text('Ошибка'),
-                      //     content: Text(
-                      //         'Оценка и отсутствие не могут быть установлены одновременно.'),
-                      //     actions: [
-                      //       TextButton(
-                      //         onPressed: () => Navigator.pop(context),
-                      //         child: Text('Ок'),
-                      //       ),
-                      //     ],
-                      //   ),
-                      // );
+                      // Проверка на конфликт оценки и отсутствия
                       _showWorningDialog(
                           'Оценка и отсутствие не могут быть установлены одновременно.');
+                    } else if (_gradeController.text.isNotEmpty) {
+                      // Проверка на диапазон оценки
+                      int? gradeValue = int.tryParse(_gradeController.text);
+                      if (gradeValue == null ||
+                          gradeValue < 0 ||
+                          gradeValue > maxPoint) {
+                        _showWorningDialog(
+                            'Оценка должна быть в пределах от 0 до $maxPoint.');
+                      } else {
+                        Navigator.pop(
+                            context); // Закрываем диалог перед сохранением
+                        // Сохраняем данные
+                        await _saveGrade(
+                          grade,
+                          _gradeController.text,
+                          _notPresence,
+                          _commentsController.text,
+                        );
+                      }
                     } else {
                       Navigator.pop(
                           context); // Закрываем диалог перед сохранением
