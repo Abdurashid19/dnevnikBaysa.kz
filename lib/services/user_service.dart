@@ -318,6 +318,41 @@ class UserService {
     return null; // Возвращаем null в случае ошибки
   }
 
+  /// Метод для получения списка предметов для класса
+  Future<List<Map<String, dynamic>>?> getSubjects({
+    required int studentId,
+    required String sid,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    try {
+      // Формируем URL запроса к сервису
+      final String url =
+          '$baseUrl/GetPredmetsForClass?studentId=$studentId&schoolYear=$schoolYear&sid=$sid';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        // Обрабатываем ответ с помощью метода _handleResponse
+        if (_handleResponse(data, context)) {
+          final List<dynamic> subjects = data['lstPredmet'] as List<dynamic>;
+          print('Список предметов: $subjects');
+
+          return subjects.map((e) => e as Map<String, dynamic>).toList();
+        } else {
+          throw Exception('Ошибка получения предметов');
+        }
+      } else {
+        throw Exception('Ошибка сервера: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка при получении предметов: $e');
+    }
+    return null;
+  }
+
   // Метод для сохранения изм
   recLesson({
     required int recId,
@@ -409,6 +444,43 @@ class UserService {
       print('Error fetching subjects: $e');
     }
     return [];
+  }
+
+  /// Метод для получения списка оценок для студента
+  Future<List<Map<String, dynamic>>?> getLstRateForStudent({
+    required int studentId,
+    required String date1,
+    required String date2,
+    required String sid,
+    required int subjectId,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    try {
+      final String url =
+          '$baseUrl/getLstRateForStudent?studentId=$studentId&date1=$date1&date2=$date2&sid=$sid&subjectId=$subjectId&schoolYear=$schoolYear';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          final List<dynamic> rates =
+              data['lstRateForStudent'] as List<dynamic>;
+          print('Список оценок: $rates');
+
+          return rates.map((e) => e as Map<String, dynamic>).toList();
+        } else {
+          throw Exception('Ошибка получения списка оценок');
+        }
+      } else {
+        throw Exception('Ошибка сервера: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка при получении списка оценок: $e');
+    }
+    return null;
   }
 
   // Общий метод для обработки ответа

@@ -1,3 +1,4 @@
+import 'package:baysa_app/screens/studentPages/diary_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,22 +21,21 @@ class _BottomNavBarState extends State<BottomNavBar> {
   // Список виджетов для Учителя
   static const List<Widget> _teacherPages = <Widget>[
     ListActivities(),
-    Center(child: Text('Задания')),
-    Center(child: Text('Студенты')),
+    Center(child: Text('Пока здесь пусто, но скоро будет всё и сразу!')),
+    Center(child: Text('Пока здесь пусто, но скоро будет всё и сразу!')),
   ];
 
   // Список виджетов для Ученика
   static const List<Widget> _studentPages = <Widget>[
-    ListActivities(),
-    Center(child: Text('Уроки')),
-    Center(child: Text('Оценки')),
+    DiaryPage(),
+    Center(child: Text('Тишина и покой... Но скоро тут закипит жизнь!')),
   ];
 
   // Список названий пунктов меню для Учителя
   static const List<BottomNavigationBarItem> _teacherMenuItems = [
     BottomNavigationBarItem(
-      icon: Icon(Icons.home),
-      label: 'Главная',
+      icon: Icon(Icons.menu_book),
+      label: 'Список занятий',
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.assignment),
@@ -50,16 +50,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
   // Список названий пунктов меню для Ученика
   static const List<BottomNavigationBarItem> _studentMenuItems = [
     BottomNavigationBarItem(
-      icon: Icon(Icons.home),
-      label: 'Главная',
+      icon: Icon(Icons.menu_book),
+      label: 'Дневник',
     ),
     BottomNavigationBarItem(
-      icon: Icon(Icons.book),
-      label: 'Уроки',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.grade),
-      label: 'Оценки',
+      icon: Icon(Icons.assessment),
+      label: 'Итоговые оценки',
     ),
   ];
 

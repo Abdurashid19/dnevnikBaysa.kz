@@ -10,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class ListActivities extends StatefulWidget {
   const ListActivities({Key? key}) : super(key: key);
@@ -177,9 +176,6 @@ class _ListActivitiesState extends State<ListActivities> {
     // Очищаем данные в SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-
-    // Очищаем кэш
-    await DefaultCacheManager().emptyCache();
 
     // Выходим из Firebase
     await FirebaseAuth.instance.signOut();

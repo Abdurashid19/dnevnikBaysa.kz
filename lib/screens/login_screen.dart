@@ -7,7 +7,6 @@ import 'list_activities.dart'; // Импорт HomePage
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +71,7 @@ class LoginScreen extends StatelessWidget {
                     // );
                     Navigator.pushNamedAndRemoveUntil(
                         context, '/home', (route) => false);
-                  }
+                  } else {}
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue.shade700, // Цвет кнопки

@@ -12,7 +12,8 @@ class AuthService {
       final provider = OAuthProvider("microsoft.com");
 
       provider.setCustomParameters({
-        'tenant': 'd424a0c8-160a-46e7-8127-0d7b243d9809' // Ваш tenant
+        'tenant': 'd424a0c8-160a-46e7-8127-0d7b243d9809', // Ваш tenant
+        'prompt': 'login',
       });
 
       // Выполняем аутентификацию
