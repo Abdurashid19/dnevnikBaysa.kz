@@ -7,13 +7,22 @@ import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'widgets/bottom_nav_bar.dart'; // Импортируем BottomNavBar
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'firebase_options.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Инициализация Flutter
-  await Firebase.initializeApp(); // Инициализация Firebase
+  // await Firebase.initializeApp(); // Инициализация Firebase
+  initializeDefault();
   runApp(MyApp());
+}
+
+Future<void> initializeDefault() async {
+  FirebaseApp app = await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  print('Initialized default app $app');
 }
 
 class MyApp extends StatelessWidget {
