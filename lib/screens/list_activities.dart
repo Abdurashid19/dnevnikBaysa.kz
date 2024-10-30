@@ -540,19 +540,6 @@ class _ListActivitiesState extends State<ListActivities> {
                                   _updateLessons();
                                 }
                               } else {
-                                // Если учитель не совпадает, показать сообщение об ошибке
-                                //   showDialog(
-                                //     context: context,
-                                //     builder: (BuildContext context) =>
-                                //         ErrorDialog(
-                                //       text:
-                                //           'Занятие было введено другим учителем',
-                                //       onClose: () {
-                                //         Navigator.of(context)
-                                //             .pop(); // Закрываем диалог ошибки
-                                //       },
-                                //     ),
-                                //   );
                                 _showErrorDialog(
                                     'Занятие было введено другим учителем');
                               }
@@ -588,6 +575,9 @@ class _ListActivitiesState extends State<ListActivities> {
                               if (result == 'updated') {
                                 // Обновляем данные, если необходимо
                                 _updateLessons(); // Например, метод обновления данных в вашем виджете
+                              } else {
+                                Navigator.of(context).pop(); // Закрываем диалог
+                                _updateLessons();
                               }
                             },
                             child: const Text('Оценки'),

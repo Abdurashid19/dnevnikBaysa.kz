@@ -253,6 +253,39 @@ class UserService {
     return null; // Возвращаем null в случае ошибки
   }
 
+// Метод для сохранений оценок
+  Future<Map<String, dynamic>?> putRate({
+    required int lessonId,
+    required int studentId,
+    required int rate,
+    required int notPresence,
+    required int schoolYear,
+    required int userId,
+    required String comments,
+    required String sid,
+    required BuildContext context,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/putRate?lessonId=$lessonId&studentId=$studentId&rate=$rate&notPresence=$notPresence&schoolYear=$schoolYear&userId=$userId&comments=${Uri.encodeComponent(comments)}&sid=$sid'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (_handleResponse(data, context)) {
+          print('Успешное сохранение оценки: $data');
+          return data;
+        }
+      } else {
+        throw Exception('Ошибка при сохранении оценки');
+      }
+    } catch (e) {
+      print('Ошибка при сохранении оценки: $e');
+    }
+    return null; // Возвращаем null в случае ошибки
+  }
+
   /// Метод для получения списка оценок учеников для определенного урока.
   Future<Map<String, dynamic>?> getRates({
     required int lessonId,
