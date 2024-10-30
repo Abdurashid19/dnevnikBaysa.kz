@@ -2,11 +2,22 @@ import 'package:baysa_app/models/cst_class.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/auth_service.dart';
-import 'list_activities.dart'; // Импорт HomePage
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
+
+  Future<String> _getAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return '${packageInfo.version}+${packageInfo.buildNumber}';
+    } catch (e) {
+      print(e);
+      return 'Неизвестная версия';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,31 +28,25 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Заголовок экрана
               Text(
                 'Добро пожаловать',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade900, // Цвет заголовка
+                  color: Colors.blue.shade900,
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Подзаголовок
               Text(
                 'Войдите, чтобы продолжить',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.blueGrey, // Цвет подзаголовка
+                  color: Colors.blueGrey,
                 ),
               ),
               const SizedBox(height: 50),
-
-              // Кнопка для входа через Microsoft
               ElevatedButton(
                 onPressed: () async {
-                  // Показываем индикатор загрузки
                   showDialog(
                     context: context,
                     barrierDismissible: false,
@@ -52,50 +57,60 @@ class LoginScreen extends StatelessWidget {
                     },
                   );
 
-                  // Попытка авторизации через Microsoft
                   final user =
                       await Provider.of<AuthService>(context, listen: false)
                           .signInWithMicrosoft(context);
 
-                  // Закрываем индикатор загрузки
                   Navigator.of(context).pop();
 
                   if (user != null) {
-                    // Если авторизация успешна, перенаправляем на HomePage и передаем данные пользователя
-                    // Navigator.pushReplacement(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) =>
-                    //         ListActivities(),а// Передаем объект User
-                    //   ),
-                    // );
                     Navigator.pushNamedAndRemoveUntil(
                         context, '/home', (route) => false);
-                  } else {}
+                  }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade700, // Цвет кнопки
+                  backgroundColor: Colors.blue.shade700,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12), // Скругленные углы
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 15, horizontal: 40), // Отступы внутри кнопки
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.login,
-                        color: Colors.white), // Иконка "вход"
+                    const Icon(Icons.login, color: Colors.white),
                     const SizedBox(width: 10),
                     const Text(
                       'Войти через Microsoft',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white, // Цвет текста на кнопке
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 10),
+
+              // const Spacer(),
+              FutureBuilder<String>(
+                future: _getAppVersion(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Text('Загрузка версии...');
+                  } else if (snapshot.hasError) {
+                    return const Text('Ошибка загрузки версии');
+                  } else {
+                    return Text(
+                      'Version: ${snapshot.data}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    );
+                  }
+                },
               ),
             ],
           ),
