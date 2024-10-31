@@ -33,13 +33,11 @@ class _ListActivitiesState extends State<ListActivities> {
 
   List<String> _classes = [];
   String? _selectedClass;
-  Map<String, int> _classMap =
-      {}; // Для хранения соответствия между именами и ID классов
+  Map<String, int> _classMap = {};
 
   List<String> _subjects = [];
   String? _selectedSubject;
-  Map<String, int> _subjectMap =
-      {}; // Для хранения соответствия между именами и ID предметов
+  Map<String, int> _subjectMap = {};
 
   bool _isLoading = true;
   List<Map<String, dynamic>> _lessons = [];
@@ -49,7 +47,24 @@ class _ListActivitiesState extends State<ListActivities> {
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    _initialize();
+  }
+
+  // Метод инициализации
+  Future<void> _initialize() async {
+    await _loadInitialData();
+    await _loadSavedParameters();
+    if (_selectedClass != null) {
+      await _loadSubjects(_classMap[_selectedClass]!);
+    }
+    if (_selectedSubject != null &&
+        _startDateController.text.isNotEmpty &&
+        _endDateController.text.isNotEmpty) {
+      await _updateLessons();
+    }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   // Метод для загрузки начальных данных
@@ -91,20 +106,29 @@ class _ListActivitiesState extends State<ListActivities> {
         _classes.add(cls['clsName']);
         _classMap[cls['clsName']] = cls['id'];
       }
-
-      // // Устанавливаем выбранный класс по умолчанию
-      // _selectedClass = _classes.isNotEmpty ? _classes[0] : null;
-
-      // // Загружаем предметы для выбранного класса
-      // if (_selectedClass != null) {
-      //   await _loadSubjects(_classMap[_selectedClass]!);
-      // }
-
-      setState(() {
-        _isLoading = false;
-      });
     } catch (e) {
       print('Ошибка загрузки данных: $e');
+    }
+  }
+
+  // Метод для загрузки сохраненных параметров
+  Future<void> _loadSavedParameters() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedStartDate = prefs.getString('startDate');
+    final savedEndDate = prefs.getString('endDate');
+    final savedClass = prefs.getString('selectedClass');
+    final savedSubject = prefs.getString('selectedSubject');
+
+    if (savedStartDate != null &&
+        savedEndDate != null &&
+        savedClass != null &&
+        savedSubject != null) {
+      setState(() {
+        _startDateController.text = savedStartDate;
+        _endDateController.text = savedEndDate;
+        _selectedClass = savedClass;
+        _selectedSubject = savedSubject;
+      });
     }
   }
 
@@ -122,10 +146,11 @@ class _ListActivitiesState extends State<ListActivities> {
     }
 
     // Устанавливаем выбранный предмет по умолчанию
-    setState(() {
-      _selectedSubject =
-          _subjects.isNotEmpty && _subjects.length == 1 ? _subjects[0] : null;
-    });
+    if (!_subjects.contains(_selectedSubject)) {
+      setState(() {
+        _selectedSubject = _subjects.isNotEmpty ? _subjects[0] : null;
+      });
+    }
   }
 
   // Метод для форматирования даты
@@ -135,6 +160,13 @@ class _ListActivitiesState extends State<ListActivities> {
   }
 
   Future<void> _updateLessons() async {
+    // Сохраняем выбранные параметры
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('startDate', _startDateController.text);
+    await prefs.setString('endDate', _endDateController.text);
+    await prefs.setString('selectedClass', _selectedClass!);
+    await prefs.setString('selectedSubject', _selectedSubject!);
+
     setState(() {
       _isLoadingLessons = true; // Начинаем загрузку
     });
@@ -143,9 +175,9 @@ class _ListActivitiesState extends State<ListActivities> {
       final classId = _classMap[_selectedClass]!;
       final subjectId = _subjectMap[_selectedSubject]!;
 
-      final startDate = DateFormat('EEE MMM dd yyyy')
+      final startDate = DateFormat('EEE MMM dd yyyy', 'en_US')
           .format(DateFormat('dd.MM.yyyy').parse(_startDateController.text));
-      final endDate = DateFormat('EEE MMM dd yyyy')
+      final endDate = DateFormat('EEE MMM dd yyyy', 'en_US')
           .format(DateFormat('dd.MM.yyyy').parse(_endDateController.text));
 
       final lessons = await _userService.getLessons(
@@ -228,7 +260,6 @@ class _ListActivitiesState extends State<ListActivities> {
           ),
         ],
       ),
-      // Устанавливаем цвет фона Scaffold
       backgroundColor: Cst.backgroundApp,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -238,35 +269,28 @@ class _ListActivitiesState extends State<ListActivities> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ФИО преподавателя
                     Text(
                       '$_fio',
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
-
-                    // Поля для выбора дат с возможностью изменения
                     Row(
                       children: [
                         Expanded(
                             child: _buildDateField(
                                 'Начало периода', _startDateController)),
-                        const SizedBox(width: 16), // Отступ между полями
+                        const SizedBox(width: 16),
                         Expanded(
                             child: _buildDateField(
                                 'Конец периода', _endDateController)),
                       ],
                     ),
                     const SizedBox(height: 10),
-
-                    // Выпадающие меню для класса и предмета
                     _buildClassDropdown(),
                     const SizedBox(height: 10),
                     _buildSubjectDropdown(),
                     const SizedBox(height: 20),
-
-                    // Кнопка обновить
                     if (_selectedClass != null && _selectedSubject != null)
                       Center(
                         child: CustomElevatedButton(
@@ -274,14 +298,12 @@ class _ListActivitiesState extends State<ListActivities> {
                           text: 'Обновить',
                         ),
                       ),
-
                     const SizedBox(height: 20),
                     _buildLessonsTable(),
                   ],
                 ),
               ),
             ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(
@@ -327,7 +349,6 @@ class _ListActivitiesState extends State<ListActivities> {
           itemBuilder: (context, index) {
             final lesson = _lessons[index];
 
-            // Форматируем дату
             String formattedDate = '';
             try {
               DateTime parsedDate = DateTime.parse(lesson['date2']);
@@ -336,14 +357,13 @@ class _ListActivitiesState extends State<ListActivities> {
               formattedDate = lesson['date2'];
             }
 
-            // Проверяем тип урока: СОР, СОЧ или Экзамен
             bool isSor = [11, 12, 13, 14].contains(lesson['gradeId']);
             bool isSoch = lesson['gradeId'] == 15;
             bool isExam = lesson['gradeId'] == 7;
             bool error = lesson['sorWithoutLesson'] == 1 &&
                 !(lesson['gradeId'] == 1 || lesson['maxPoint'] == 0);
-            // Логика для изменения цвета карточки
-            Color cardColor = Colors.white; // По умолчанию белый цвет
+
+            Color cardColor = Colors.white;
             if (error) {
               cardColor = Colors.red.shade300;
             } else if (isSor) {
@@ -353,23 +373,16 @@ class _ListActivitiesState extends State<ListActivities> {
             } else if (isExam) {
               cardColor = Colors.lightBlue.shade300;
             }
-            // Логика для подсветки карточки, если количество студентов, не получивших оценку, больше нуля
-            // if ((lesson['cntStudents'] - lesson['cntRates'] > 0) &&
-            //     !(lesson['gradeId'] == 1 || lesson['maxPoint'] == 0)) {
-            //   cardColor = Colors.red.shade300;
-            // }
 
             return GestureDetector(
               onTap: () {
-                _showActionDialog(
-                    context, lesson); // Показать диалог выбора действия
+                _showActionDialog(context, lesson);
               },
               child: CustomCard(
                 backgroundColor: cardColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Первая строка: Дата, Период и Оценки
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -426,7 +439,6 @@ class _ListActivitiesState extends State<ListActivities> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Вторая строка: Тема урока
                     RichText(
                       text: TextSpan(
                         children: [
@@ -466,26 +478,23 @@ class _ListActivitiesState extends State<ListActivities> {
     );
   }
 
-// Метод для показа диалога с выбором действия
   void _showActionDialog(
       BuildContext context, Map<String, dynamic> lesson) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // Получаем высоту экрана
         final screenHeight = MediaQuery.of(context).size.height;
 
         return Dialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0), // Скругление углов
+            borderRadius: BorderRadius.circular(20.0),
           ),
           child: Container(
-            height: screenHeight * 0.3, // Устанавливаем высоту в 30% от экрана
-            padding: const EdgeInsets.all(16.0), // Внутренние отступы
+            height: screenHeight * 0.3,
+            padding: const EdgeInsets.all(16.0),
             child: Stack(
               children: [
-                // Кнопка закрытия в верхнем правом углу
                 Positioned(
                   right: -10.0,
                   top: -10.0,
@@ -495,32 +504,29 @@ class _ListActivitiesState extends State<ListActivities> {
                       color: Colors.red,
                     ),
                     onPressed: () {
-                      Navigator.of(context).pop(); // Закрываем диалог
+                      Navigator.of(context).pop();
                     },
                   ),
                 ),
-                // Основное содержимое
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Заголовок диалога
                     Text(
                       'Выберите действие',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 20, // Увеличиваем размер шрифта
-                        fontWeight: FontWeight.bold, // Делаем текст жирным
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Кнопки действий
                     ButtonBar(
                       alignment: MainAxisAlignment.center,
                       buttonPadding:
                           const EdgeInsets.symmetric(horizontal: 8.0),
                       children: <Widget>[
                         SizedBox(
-                          width: 160, // Задаем одинаковую ширину для кнопок
+                          width: 160,
                           child: OutlinedButton(
                             onPressed: () async {
                               final prefs =
@@ -528,7 +534,6 @@ class _ListActivitiesState extends State<ListActivities> {
                               final _teacherId = prefs.getInt('userId');
 
                               if (_teacherId == lesson['teacherId']) {
-                                // Если учитель совпадает, открыть экран редактирования
                                 final result = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -538,8 +543,7 @@ class _ListActivitiesState extends State<ListActivities> {
                                 );
 
                                 if (result == 'success') {
-                                  Navigator.of(context)
-                                      .pop(); // Закрываем диалог
+                                  Navigator.of(context).pop();
                                   _updateLessons();
                                 }
                               } else {
@@ -549,14 +553,13 @@ class _ListActivitiesState extends State<ListActivities> {
                             },
                             child: const Text('Редактировать'),
                             style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white, // Белый фон кнопки
-                              foregroundColor: Colors.black, // Цвет текста
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
                               side: const BorderSide(
-                                color: Color(0xFFDCE1E6), // Цвет обводки
+                                color: Color(0xFFDCE1E6),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    10.0), // Скругление углов
+                                borderRadius: BorderRadius.circular(10.0),
                               ),
                             ),
                           ),
@@ -566,7 +569,6 @@ class _ListActivitiesState extends State<ListActivities> {
                           width: 160,
                           child: OutlinedButton(
                             onPressed: () async {
-                              // Переходим на экран с оценками
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -576,23 +578,21 @@ class _ListActivitiesState extends State<ListActivities> {
                               );
 
                               if (result == 'updated') {
-                                // Обновляем данные, если необходимо
-                                _updateLessons(); // Например, метод обновления данных в вашем виджете
+                                _updateLessons();
                               } else {
-                                Navigator.of(context).pop(); // Закрываем диалог
+                                Navigator.of(context).pop();
                                 _updateLessons();
                               }
                             },
                             child: const Text('Оценки'),
                             style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white, // Белый фон кнопки
-                              foregroundColor: Colors.black, // Цвет текста
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
                               side: const BorderSide(
-                                color: Color(0xFFDCE1E6), // Цвет обводки
+                                color: Color(0xFFDCE1E6),
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    10.0), // Скругление углов
+                                borderRadius: BorderRadius.circular(10.0),
                               ),
                             ),
                           ),
@@ -609,7 +609,6 @@ class _ListActivitiesState extends State<ListActivities> {
     );
   }
 
-  // Виджет для поля даты
   Widget _buildDateField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,7 +631,6 @@ class _ListActivitiesState extends State<ListActivities> {
     );
   }
 
-  // Виджет для выпадающего списка классов
   Widget _buildClassDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -664,10 +662,10 @@ class _ListActivitiesState extends State<ListActivities> {
                 ? _selectedClass
                 : null,
             onChanged: (String? newValue) async {
-              // Загружаем предметы для выбранного класса
               await _loadSubjects(_classMap[newValue]!);
               setState(() {
                 _selectedClass = newValue!;
+                _selectedSubject = null;
                 _lessons.clear();
               });
             },
@@ -688,7 +686,6 @@ class _ListActivitiesState extends State<ListActivities> {
     );
   }
 
-// Виджет для выпадающего списка предметов
   Widget _buildSubjectDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -20,6 +20,7 @@ class _DiaryPageState extends State<DiaryPage> {
   List<Map<String, dynamic>> _subjects = [];
   List<Map<String, dynamic>> _grades = [];
   Map<String, dynamic>? _selectedSubject;
+  int? _savedSubjectId; // Добавлено
   bool _isLoading = false;
   String? sid;
   int? studentId;
@@ -28,8 +29,85 @@ class _DiaryPageState extends State<DiaryPage> {
   @override
   void initState() {
     super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
     _initializeDates();
-    _fetchSubjects();
+    await _loadSavedParameters();
+    await _fetchSubjects();
+
+    // После загрузки предметов устанавливаем выбранный предмет
+    if (_savedSubjectId != null) {
+      final subject = _subjects.firstWhere(
+        (subject) => subject['id'] == _savedSubjectId,
+        orElse: () => _subjects.first,
+      );
+      setState(() {
+        _selectedSubject = subject;
+      });
+    } else {
+      setState(() {
+        _selectedSubject = _subjects.first;
+      });
+    }
+
+    // Если все параметры присутствуют, обновляем список
+    if (_startDateController.text.isNotEmpty &&
+        _endDateController.text.isNotEmpty &&
+        _selectedSubject != null) {
+      _onUpdatePressed();
+    }
+  }
+
+  // Открытие диалога выбора даты
+  Future<void> _selectDate(
+      BuildContext context, TextEditingController controller) async {
+    DateTime initialDate;
+    try {
+      initialDate = DateFormat('dd.MM.yyyy').parse(controller.text);
+    } catch (e) {
+      initialDate = DateTime.now();
+    }
+
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    final DateTime? picked = await showDatePicker(
+      locale: const Locale('ru', 'RU'),
+      context: context,
+      initialDate: initialDate.isAfter(today) ? today : initialDate,
+      firstDate: DateTime(2020),
+      lastDate: today,
+    );
+    if (picked != null && picked != initialDate) {
+      setState(() {
+        controller.text = DateFormat('dd.MM.yyyy').format(picked);
+      });
+    }
+  }
+
+  Widget _buildDateField(String label, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 5),
+        TextFormField(
+          controller: controller,
+          readOnly: true,
+          decoration: InputDecoration(
+            labelText: label,
+            border: OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.calendar_today),
+              onPressed: () => _selectDate(context, controller),
+            ),
+          ),
+          keyboardType: TextInputType.datetime,
+        ),
+      ],
+    );
   }
 
   void _initializeDates() {
@@ -38,6 +116,23 @@ class _DiaryPageState extends State<DiaryPage> {
 
     _startDateController.text = formattedToday;
     _endDateController.text = formattedToday;
+  }
+
+  Future<void> _loadSavedParameters() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedStartDate = prefs.getString('startDate');
+    final savedEndDate = prefs.getString('endDate');
+    final savedSubjectId = prefs.getInt('selectedSubjectId');
+
+    if (savedStartDate != null &&
+        savedEndDate != null &&
+        savedSubjectId != null) {
+      setState(() {
+        _startDateController.text = savedStartDate;
+        _endDateController.text = savedEndDate;
+        _savedSubjectId = savedSubjectId;
+      });
+    }
   }
 
   Future<void> _fetchSubjects() async {
@@ -69,8 +164,6 @@ class _DiaryPageState extends State<DiaryPage> {
         context: context,
       );
 
-      // Проверка на успешность ответа (retNum == 0)
-
       setState(() {
         _subjects = response!;
       });
@@ -94,12 +187,130 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
+  bool _validateDates() {
+    try {
+      final startDate =
+          DateFormat('dd.MM.yyyy').parse(_startDateController.text);
+      final endDate = DateFormat('dd.MM.yyyy').parse(_endDateController.text);
+
+      if (startDate.isAfter(endDate)) {
+        _showErrorDialog('Начальная дата не может быть позже конечной даты.');
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      _showErrorDialog('Некорректный формат дат.');
+      return false;
+    }
+  }
+
+  Widget _buildGradeItem(Map<String, dynamic> grade) {
+    return CustomCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Дата урока
+          Text(
+            '${formatDateString(grade['lessonDateString']) ?? ''}',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 4),
+
+          // Предмет
+          Text(
+            grade['subjectName'] ?? 'Предмет не указан',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Тип оценки и оценка
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                grade['gradeTypeName'] ?? '',
+                style: TextStyle(fontSize: 16),
+              ),
+              if (grade['presence'] != true)
+                Text(
+                  grade['rateString'] ?? '',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+
+          // Присутствие
+          if (grade['presence'] == true)
+            Text(
+              '${grade['presence'] == true ? 'Отсутствовал' : 'Присутствовал'}',
+              style: TextStyle(
+                color: grade['presence'] == true ? Colors.red : Colors.green,
+              ),
+            ),
+          // Учитель
+          Text(
+            'Учитель: ${grade['teacherName'] ?? ''}',
+          ),
+          // Комментарий (если есть)
+          if (grade['comment'] != null &&
+              grade['comment'].toString().isNotEmpty)
+            Text(
+              'Комментарий:  ${grade['comment']}',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubjectDropdown() {
+    return DropdownButtonFormField<Map<String, dynamic>>(
+      isDense: true,
+      isExpanded: true,
+      dropdownColor: Colors.white,
+      value: _selectedSubject,
+      decoration: InputDecoration(
+        labelText: 'Предмет',
+        border: OutlineInputBorder(),
+      ),
+      items: _subjects.map((subject) {
+        return DropdownMenuItem<Map<String, dynamic>>(
+          value: subject,
+          child: Text(subject['name']),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedSubject = value;
+        });
+      },
+    );
+  }
+
+  Widget _buildUpdateButton() {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _onUpdatePressed,
+      child: Text('Обновить'),
+    );
+  }
+
   void _onUpdatePressed() async {
     if (!_validateDates()) {
       return;
     } else if (_selectedSubject == null) {
       return _showErrorDialog('Не выбран предмет');
     } else {
+      // Сохраняем выбранные параметры
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('startDate', _startDateController.text);
+      await prefs.setString('endDate', _endDateController.text);
+      await prefs.setInt('selectedSubjectId', _selectedSubject!['id']);
+
       setState(() {
         _isLoading = true;
         _grades.clear(); // Очищаем предыдущие оценки
@@ -154,104 +365,7 @@ class _DiaryPageState extends State<DiaryPage> {
     }
   }
 
-  // Открытие диалога выбора даты
-  Future<void> _selectDate(
-      BuildContext context, TextEditingController controller) async {
-    DateTime initialDate;
-    try {
-      initialDate = DateFormat('dd.MM.yyyy').parse(controller.text);
-    } catch (e) {
-      initialDate = DateTime.now();
-    }
-
-    final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
-
-    final DateTime? picked = await showDatePicker(
-      locale: const Locale('ru', 'RU'),
-      context: context,
-      initialDate: initialDate.isAfter(today) ? today : initialDate,
-      firstDate: DateTime(2020),
-      lastDate: today,
-    );
-    if (picked != null && picked != initialDate) {
-      setState(() {
-        controller.text = DateFormat('dd.MM.yyyy').format(picked);
-      });
-    }
-  }
-
-  Widget _buildDateField(String label, TextEditingController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 5),
-        TextFormField(
-          controller: controller,
-          readOnly: true,
-          decoration: InputDecoration(
-            labelText: label,
-            border: OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.calendar_today),
-              onPressed: () => _selectDate(context, controller),
-            ),
-          ),
-          keyboardType: TextInputType.datetime,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSubjectDropdown() {
-    return DropdownButtonFormField<Map<String, dynamic>>(
-      isDense: true,
-      isExpanded: true,
-      dropdownColor: Colors.white,
-      value: _selectedSubject,
-      decoration: InputDecoration(
-        labelText: 'Предмет',
-        border: OutlineInputBorder(),
-      ),
-      items: _subjects.map((subject) {
-        return DropdownMenuItem<Map<String, dynamic>>(
-          value: subject,
-          child: Text(subject['name']),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedSubject = value;
-        });
-      },
-    );
-  }
-
-  Widget _buildUpdateButton() {
-    return ElevatedButton(
-      onPressed: _isLoading ? null : _onUpdatePressed,
-      child: Text('Обновить'),
-    );
-  }
-
-  bool _validateDates() {
-    try {
-      final startDate =
-          DateFormat('dd.MM.yyyy').parse(_startDateController.text);
-      final endDate = DateFormat('dd.MM.yyyy').parse(_endDateController.text);
-
-      if (startDate.isAfter(endDate)) {
-        _showErrorDialog('Начальная дата не может быть позже конечной даты.');
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      _showErrorDialog('Некорректный формат дат.');
-      return false;
-    }
-  }
+  // Остальные методы остаются без изменений...
 
   // Метод для выхода и очистки данных
   Future<void> _logout() async {
@@ -266,67 +380,6 @@ class _DiaryPageState extends State<DiaryPage> {
     Future.delayed(Duration(seconds: 1), () {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     });
-  }
-
-  Widget _buildGradeItem(Map<String, dynamic> grade) {
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Дата урока
-          Text(
-            '${formatDateString(grade['lessonDateString']) ?? ''}',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 4),
-
-          // Предмет
-          Text(
-            grade['subjectName'] ?? 'Предмет не указан',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Тип оценки и оценка
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                grade['gradeTypeName'] ?? '',
-                style: TextStyle(fontSize: 16),
-              ),
-              Text(
-                grade['rateString'] ?? '',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-
-          // Присутствие
-          Text(
-            '${grade['presence'] == true ? 'Отсутствовал' : 'Присутствовал'}',
-            style: TextStyle(
-              color: grade['presence'] == true ? Colors.red : Colors.green,
-            ),
-          ),
-          // Учитель
-          Text(
-            'Учитель: ${grade['teacherName'] ?? ''}',
-          ),
-          // Комментарий (если есть)
-          if (grade['comment'] != null &&
-              grade['comment'].toString().isNotEmpty)
-            Text(
-              'Комментарий:  ${grade['comment']}',
-            ),
-        ],
-      ),
-    );
   }
 
   @override

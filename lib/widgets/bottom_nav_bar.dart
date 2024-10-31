@@ -1,4 +1,5 @@
 import 'package:baysa_app/screens/studentPages/diary_page.dart';
+import 'package:baysa_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,8 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
+  final UserService _userService = UserService();
+
   int _selectedIndex = 0;
 
   bool? _isTeacher; // Nullable state variable to store user type
@@ -70,11 +73,19 @@ class _BottomNavBarState extends State<BottomNavBar> {
     final prefs = await SharedPreferences.getInstance();
 
     // Проверяем, есть ли сохранённый тип пользователя
-    final typeUser = prefs.getInt('typeUser');
-
-    setState(() {
-      _isTeacher = typeUser == 1;
-    });
+    var typeUser = prefs.getInt('typeUser');
+    if (typeUser == null) {
+      final userEmail = prefs.getString('userEmail') ?? '';
+      await _userService.checkUserMs(userEmail, context);
+      typeUser = prefs.getInt('typeUser');
+      setState(() {
+        _isTeacher = typeUser == 1;
+      });
+    } else {
+      setState(() {
+        _isTeacher = typeUser == 1;
+      });
+    }
   }
 
   // Обработка нажатия на элемент нижнего меню
