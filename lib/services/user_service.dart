@@ -488,6 +488,139 @@ class UserService {
     return null;
   }
 
+  // Метод для получения списка классов с помощью сервиса getListClass17
+  Future<List<Map<String, dynamic>>> getListClass17({
+    required int teacherId,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getListClass17?teacherId=$teacherId&schoolYear=$schoolYear'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          final classes = jsonDecode(data['data']) as List<dynamic>;
+          print('Список классов: $classes');
+          return classes.map((e) => e as Map<String, dynamic>).toList();
+        }
+      } else {
+        throw Exception('Ошибка получения списка классов');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+    }
+    return []; // Возвращаем пустой список в случае ошибки
+  }
+
+// Метод для получения списка типов оценивания
+  Future<List<Map<String, dynamic>>> getLstRateType(
+      BuildContext context) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/getLstRateType'),
+        headers: {
+          'accept': 'application/json, text/plain, */*',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          final rateTypes = jsonDecode(data['data']) as List<dynamic>;
+          return rateTypes.map((e) => e as Map<String, dynamic>).toList();
+        } else {
+          _showErrorDialog(
+              context, data['message'] ?? 'Ошибка получения типов оценивания');
+          return [];
+        }
+      } else {
+        throw Exception('Ошибка получения типов оценивания');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+      _showErrorDialog(context, 'Произошла ошибка при получении данных.');
+      return [];
+    }
+  }
+
+  // Метод для получения списка учеников в спец.классе
+  Future<List<Map<String, dynamic>>> getListStudentForSpecClass({
+    required int classId,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getListStudentForSpecClass?classId=$classId&schoolYear=$schoolYear'),
+        headers: {
+          'accept': 'application/json, text/plain, */*',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          final students = jsonDecode(data['data']) as List<dynamic>;
+          return students.map((e) => e as Map<String, dynamic>).toList();
+        } else {
+          _showErrorDialog(
+              context, data['message'] ?? 'Ошибка получения списка учеников');
+          return [];
+        }
+      } else {
+        throw Exception('Ошибка получения списка учеников');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+      _showErrorDialog(context, 'Произошла ошибка при получении данных.');
+      return [];
+    }
+  }
+
+  // Метод для поиска учеников по спец.классу для добавления
+  Future<List<Map<String, dynamic>>> getListStudentForSpecClassForSelect({
+    required int schoolYear,
+    required String query,
+    required BuildContext context,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getListStudentForSpecClassForSelect?schoolYear=$schoolYear&val=$query'),
+        headers: {
+          'accept': 'application/json, text/plain, */*',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          final students = jsonDecode(data['data']) as List<dynamic>;
+          return students.map((e) => e as Map<String, dynamic>).toList();
+        } else {
+          _showErrorDialog(
+              context, data['message'] ?? 'Ошибка поиска учеников');
+          return [];
+        }
+      } else {
+        throw Exception('Ошибка поиска учеников');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+      _showErrorDialog(context, 'Произошла ошибка при поиске данных.');
+      return [];
+    }
+  }
+
   // Общий метод для обработки ответа
   bool _handleResponse(Map<String, dynamic> data, BuildContext context) {
     if (data['rv'] != null) {

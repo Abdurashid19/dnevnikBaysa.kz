@@ -1,3 +1,4 @@
+import 'package:baysa_app/screens/my_classes.dart';
 import 'package:baysa_app/screens/studentPages/diary_page.dart';
 import 'package:baysa_app/services/user_service.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
   // Список виджетов для Учителя
   static const List<Widget> _teacherPages = <Widget>[
     ListActivities(),
-    Center(child: Text('Пока здесь пусто, но скоро будет всё и сразу!')),
+    MyClassesPage(),
     Center(child: Text('Пока здесь пусто, но скоро будет всё и сразу!')),
   ];
 
@@ -42,7 +43,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.assignment),
-      label: 'Задания',
+      label: 'Мои классы',
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.people),
