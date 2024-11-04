@@ -1,4 +1,5 @@
 import 'package:baysa_app/models/cst_class.dart';
+import 'package:baysa_app/screens/dopScreens/add_student_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,143 +69,16 @@ class _EditClassPageState extends State<EditClassPage> {
   }
 
   void _showAddStudentDialog() async {
-    final TextEditingController _studentSearchController =
-        TextEditingController();
-    List<Map<String, dynamic>> _searchResults = [];
-    Map<String, dynamic>? _selectedStudent;
-    bool isSearching = false;
-
-    Future<void> _searchStudent(String query) async {
-      setState(() {
-        isSearching = true;
-      });
-
-      final results = await _userService.getListStudentForSpecClassForSelect(
-        schoolYear: 2024,
-        query: query,
-        context: context,
-      );
-
-      setState(() {
-        _searchResults = results;
-        isSearching = false;
-      });
-    }
-
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        final screenHeight = MediaQuery.of(context).size.height;
-
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: screenHeight * 0.5,
-            ),
-            padding: const EdgeInsets.all(16.0),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -10.0,
-                  top: -10.0,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.red,
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 30),
-                    const Text(
-                      'Добавление ученика в спец.класс',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _studentSearchController,
-                      decoration: const InputDecoration(
-                        labelText: 'Ученик',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        if (value.isNotEmpty) {
-                          _searchStudent(value);
-                        } else {
-                          setState(() {
-                            _searchResults = [];
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    // if (_searchResults.isNotEmpty)
-                    Container(
-                      constraints: BoxConstraints(
-                        maxHeight: screenHeight * 0.2,
-                      ),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _searchResults.length,
-                        itemBuilder: (context, index) {
-                          final student = _searchResults[index];
-                          return ListTile(
-                            title: Text(
-                                '${student['fio']} ${student['className']}'),
-                            onTap: () {
-                              setState(() {
-                                _selectedStudent = student;
-                                _studentSearchController.text = student['fio'];
-                                _searchResults =
-                                    []; // Clear results after selection
-                              });
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_selectedStudent != null) {
-                          setState(() {
-                            _students.add(_selectedStudent!);
-                          });
-                          Navigator.pop(context);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Пожалуйста, выберите ученика'),
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text('Сохранить'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+      builder: (context) {
+        return AddStudentDialog(
+          userService: _userService,
+          onStudentAdded: (selectedStudent) {
+            setState(() {
+              _students.add(selectedStudent);
+            });
+          },
         );
       },
     );

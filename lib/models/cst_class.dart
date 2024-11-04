@@ -153,6 +153,84 @@ class WarningDialog extends StatelessWidget {
   }
 }
 
+class DropdownTextField extends StatefulWidget {
+  final List<String> items;
+  final String labelText;
+  final Function(String) onChanged;
+
+  const DropdownTextField({
+    Key? key,
+    required this.items,
+    required this.labelText,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  _DropdownTextFieldState createState() => _DropdownTextFieldState();
+}
+
+class _DropdownTextFieldState extends State<DropdownTextField> {
+  final TextEditingController _controller = TextEditingController();
+  bool _isDropdownOpened = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggleDropdown() {
+    setState(() {
+      _isDropdownOpened = !_isDropdownOpened;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _toggleDropdown,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: _controller,
+            decoration: InputDecoration(
+              labelText: widget.labelText,
+              border: OutlineInputBorder(),
+              suffixIcon: Icon(Icons.arrow_drop_down),
+            ),
+            readOnly: true,
+          ),
+          if (_isDropdownOpened)
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.white,
+              ),
+              child: ListView(
+                shrinkWrap: true,
+                children: widget.items.map((item) {
+                  return ListTile(
+                    title: Text(item),
+                    onTap: () {
+                      setState(() {
+                        _controller.text = item;
+                        _isDropdownOpened = false;
+                      });
+                      widget.onChanged(item);
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 String formatDate(DateTime date) {
   return DateFormat('dd.MM.yyyy').format(date);
 }
