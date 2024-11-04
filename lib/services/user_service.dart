@@ -31,7 +31,12 @@ class UserService {
         throw Exception('Ошибка запроса: ${response.statusCode}');
       }
     } catch (e) {
-      print('Ошибка запроса: $e');
+      // Enhanced error handling
+      if (e is http.ClientException) {
+        print('Ошибка запроса: Возможно, это проблема с CORS или URL - $e');
+      } else {
+        print('Ошибка запроса: $e');
+      }
     }
   }
 

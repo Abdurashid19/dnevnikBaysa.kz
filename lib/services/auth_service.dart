@@ -4,6 +4,60 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  Future<User?> signInWithMicrosoftWeb(BuildContext context) async {
+    try {
+      // Вход через Microsoft
+      final provider = OAuthProvider("microsoft.com");
+
+      provider.setCustomParameters({
+        'tenant': 'd424a0c8-160a-46e7-8127-0d7b243d9809', // Ваш tenant
+        'prompt': 'login',
+      });
+
+      // Выполняем аутентификацию через всплывающее окно для веб
+      final UserCredential userCredential =
+          await _firebaseAuth.signInWithPopup(provider);
+
+      // Получаем информацию о пользователе
+      final User? user = userCredential.user;
+
+      // Проверяем, что авторизация прошла успешно
+      if (user != null) {
+        print("Успешная авторизация пользователя: ${user.displayName}");
+
+        // Сохраняем данные пользователя в SharedPreferences
+        await _saveUserData(user);
+
+        return user;
+      } else {
+        print("Авторизация не удалась.");
+        return null;
+      }
+    } catch (e) {
+      print("Ошибка авторизации: $e");
+
+      // Показываем ошибку через AlertDialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Ошибка авторизации"),
+            content: Text("Не удалось выполнить вход: $e"),
+            actions: [
+              TextButton(
+                child: const Text("ОК"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+
+      return null;
+    }
+  }
 
   // Метод для авторизации через Microsoft
   Future<User?> signInWithMicrosoft(BuildContext context) async {

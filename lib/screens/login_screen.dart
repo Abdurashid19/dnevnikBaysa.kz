@@ -1,4 +1,5 @@
 import 'package:baysa_app/models/cst_class.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,9 +58,13 @@ class LoginScreen extends StatelessWidget {
                     },
                   );
 
-                  final user =
-                      await Provider.of<AuthService>(context, listen: false)
-                          .signInWithMicrosoft(context);
+                  final AuthService authService =
+                      Provider.of<AuthService>(context, listen: false);
+                  final user = kIsWeb
+                      ? await authService
+                          .signInWithMicrosoftWeb(context) // Call for web
+                      : await authService
+                          .signInWithMicrosoft(context); // Call for mobile
 
                   Navigator.of(context).pop();
 
