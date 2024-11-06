@@ -29,6 +29,7 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
   };
   int? _schoolYear;
   int? _teacherId;
+  int? subjectId;
 
   List<Map<String, dynamic>> _rateTypes = [];
   List<Map<String, dynamic>> _subjects = [];
@@ -60,21 +61,28 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
         _teacherId = prefs.getInt('userId');
       }
 
-      _fetchRateTypes();
       _fetchSubjects();
+      _fetchRateTypes();
     } catch (e) {
       print('Ошибка загрузки данных: $e');
     }
   }
 
   Future<void> _fetchRateTypes() async {
+    if (_selectedSubject == null)
+      return; // Проверка на случай, если предмет не выбран
+
     setState(() => _isLoading = true);
 
     try {
-      final rateTypes = await widget.userService.getLstRateType(context);
-      setState(() {
-        _rateTypes = rateTypes;
-      });
+      subjectId = int.tryParse(_selectedSubject ?? '');
+      if (subjectId != null) {
+        final rateTypes =
+            await widget.userService.getLstRateType(subjectId!, context);
+        setState(() {
+          _rateTypes = rateTypes;
+        });
+      }
     } catch (e) {
       print("Error fetching rate types: $e");
     } finally {
@@ -98,6 +106,9 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
           _selectedSubject = _subjects.first['id'].toString();
         }
       });
+      if (_selectedSubject != null) {
+        _fetchRateTypes();
+      }
     } catch (e) {
       print("Error fetching subjects: $e");
     } finally {
@@ -214,6 +225,11 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
                         setState(() {
                           _selectedSubject = value;
                         });
+
+                        // Вызываем _fetchRateTypes при выборе предмета
+                        if (_selectedSubject != null) {
+                          _fetchRateTypes();
+                        }
                       },
                       decoration: CustomInputDecoration.getDecoration(
                         labelText: 'Предмет',

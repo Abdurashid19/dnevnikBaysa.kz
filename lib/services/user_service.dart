@@ -519,10 +519,10 @@ class UserService {
 
 // Метод для получения списка типов оценивания
   Future<List<Map<String, dynamic>>> getLstRateType(
-      BuildContext context) async {
+      int subjectId, BuildContext context) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/getLstRateType'),
+        Uri.parse('$baseUrl/getLstRateType?subjectId=$subjectId'),
         headers: {
           'accept': 'application/json, text/plain, */*',
         },

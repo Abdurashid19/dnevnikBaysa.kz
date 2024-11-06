@@ -34,6 +34,7 @@ class _EditClassPageState extends State<EditClassPage> {
   List<Map<String, dynamic>> _students = [];
 
   bool get isSpecialClass => widget.classItem['typeClass'] == 1;
+  int? subjectId;
 
   @override
   void initState() {
@@ -73,7 +74,8 @@ class _EditClassPageState extends State<EditClassPage> {
     setState(() => _isLoading = true);
 
     try {
-      final rateTypes = await _userService.getLstRateType(context);
+      final rateTypes = await _userService.getLstRateType(
+          widget.classItem['subjectId'], context);
       setState(() {
         _rateTypes = rateTypes;
 

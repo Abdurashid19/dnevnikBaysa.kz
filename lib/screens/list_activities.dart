@@ -192,7 +192,7 @@ class _ListActivitiesState extends State<ListActivities> {
       );
 
       setState(() {
-        _lessons = lessons;
+        _lessons = sortByLessonDateDescending(lessons);
       });
     } catch (e) {
       print('Ошибка при обновлении данных: $e');
@@ -201,6 +201,16 @@ class _ListActivitiesState extends State<ListActivities> {
         _isLoadingLessons = false; // Завершаем загрузку
       });
     }
+  }
+
+  List<Map<String, dynamic>> sortByLessonDateDescending(
+      List<Map<String, dynamic>> data) {
+    data.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['date2']);
+      DateTime dateB = DateTime.parse(b['date2']);
+      return dateB.compareTo(dateA); // Сортировка: от последней даты к ранней
+    });
+    return data;
   }
 
   // Метод для выхода и очистки данных

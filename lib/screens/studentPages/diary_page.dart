@@ -350,7 +350,6 @@ class _DiaryPageState extends State<DiaryPage> {
         if (grades != null) {
           setState(() {
             _grades = sortByLessonDateDescending(grades);
-            print(_grades);
           });
         } else {
           // Обработка ошибки
