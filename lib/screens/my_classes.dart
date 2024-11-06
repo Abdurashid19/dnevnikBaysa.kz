@@ -41,15 +41,19 @@ class _MyClassesPageState extends State<MyClassesPage> {
     }
   }
 
-  void _navigateToEditClass(
-      BuildContext context, Map<String, dynamic> classItem) {
+  _navigateToEditClass(
+      BuildContext context, Map<String, dynamic> classItem) async {
     // Navigate to the edit class page with classItem data
-    Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditClassPage(classItem: classItem),
       ),
     );
+
+    if (result == 'success') {
+      _fetchClassesData();
+    }
   }
 
   Widget _buildClassesList() {
@@ -64,14 +68,6 @@ class _MyClassesPageState extends State<MyClassesPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Список классов',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
         const SizedBox(height: 10),
         ListView.builder(
           shrinkWrap: true,
@@ -88,11 +84,8 @@ class _MyClassesPageState extends State<MyClassesPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                        '${classItem['className']} ${classItem['subjectName']}'),
-                    if (classItem['typeClass'] == 1) const SizedBox(height: 10),
-                    if (classItem['typeClass'] == 1)
-                      Text(
-                          '${classItem['typeClass'] == 1 ? 'Спец.класс' : 'Обычный класс'}'),
+                      '${classItem['className']} ${classItem['subjectName']} ${classItem['typeClass'] == 1 ? 'Спец.класс' : ''}',
+                    ),
                     const SizedBox(height: 10),
                     Text('${classItem['dayNum']}'),
                   ],

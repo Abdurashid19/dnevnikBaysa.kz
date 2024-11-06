@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
 class UserService {
-  final String baseUrl = 'https://dnevnik.baysa.kz/tWcf/Service1.svc/';
-  // final String baseUrl = 'https://dnevnik.baysa.kz/tWcfTest/Service1.svc';
+  // final String baseUrl = 'https://dnevnik.baysa.kz/tWcf/Service1.svc/';
+  final String baseUrl = 'https://dnevnik.baysa.kz/tWcfTest/Service1.svc';
 
   // Метод для проверки пользователя по email
   Future<void> checkUserMs(String userName, BuildContext context) async {
@@ -618,6 +618,52 @@ class UserService {
       print('Ошибка: $e');
       _showErrorDialog(context, 'Произошла ошибка при поиске данных.');
       return [];
+    }
+  }
+
+  // Метод для
+  Future<bool> saveSpecialClass({
+    required int classId,
+    required int teacherId,
+    required int subjectId,
+    required int schoolYear,
+    required String className,
+    required List<Map<String, dynamic>> jsonLstDayNum,
+    required String periodType,
+    required String rateTypeId,
+    required BuildContext context,
+  }) async {
+    final url =
+        '$baseUrl/recSpecClass?classId=$classId&teacherId=$teacherId&subjectId=$subjectId&schoolYear=$schoolYear&className=$className&jsonLstDayNum=${Uri.encodeComponent(json.encode(jsonLstDayNum))}&periodType=$periodType&rateTypeId=$rateTypeId';
+
+    try {
+      final response = await http.get(Uri.parse(url), headers: {
+        'accept': 'application/json, text/plain, */*',
+      });
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (_handleResponse(data, context)) {
+          if (data['code'] == 0) {
+            return true;
+          } else {
+            _showErrorDialog(
+                context, data['message'] ?? 'Ошибка сохранения спец.класса');
+            return false;
+          }
+        } else {
+          _showErrorDialog(
+              context, data['message'] ?? 'Ошибка обработки ответа сервера');
+          return false;
+        }
+      } else {
+        throw Exception('Ошибка сохранения спец.класса');
+      }
+    } catch (e) {
+      print("Ошибка: $e");
+      _showErrorDialog(context, 'Произошла ошибка при сохранении данных.');
+      return false;
     }
   }
 

@@ -231,6 +231,26 @@ class _DropdownTextFieldState extends State<DropdownTextField> {
   }
 }
 
+class CustomInputDecoration {
+  static InputDecoration getDecoration({
+    required String labelText,
+    bool isSpecialClass = false,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: TextStyle(
+        color: const Color.fromARGB(255, 159, 163, 166),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: const Color(0xFFDCE1E6),
+        ),
+      ),
+      border: const OutlineInputBorder(),
+    );
+  }
+}
+
 String formatDate(DateTime date) {
   return DateFormat('dd.MM.yyyy').format(date);
 }

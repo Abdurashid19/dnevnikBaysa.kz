@@ -1,4 +1,5 @@
 import 'package:baysa_app/models/cst_class.dart';
+import 'package:baysa_app/models/success_dialog.dart';
 import 'package:baysa_app/screens/dopScreens/add_student_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,12 +33,40 @@ class _EditClassPageState extends State<EditClassPage> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _students = [];
 
+  bool get isSpecialClass => widget.classItem['typeClass'] == 1;
+
   @override
   void initState() {
     super.initState();
     _classNameController.text = widget.classItem['className'];
+    _selectedPeriod = widget.classItem['periodType'];
+    _initializeDayControllers();
     _fetchRateTypes();
     _fetchStudents();
+  }
+
+  void _initializeDayControllers() {
+    final Map<int, String> idToWeekday = {
+      1: "Понедельник",
+      2: "Вторник",
+      3: "Среда",
+      4: "Четверг",
+      5: "Пятница",
+      6: "Суббота",
+    };
+
+    if (widget.classItem.containsKey('lst')) {
+      for (var item in widget.classItem['lst']) {
+        int id = item['id'];
+        int cntLesson = item['cntLesson'];
+
+        String? weekday = idToWeekday[id];
+
+        if (weekday != null && _dayControllers.containsKey(weekday)) {
+          _dayControllers[weekday]?.text = cntLesson.toString();
+        }
+      }
+    }
   }
 
   Future<void> _fetchRateTypes() async {
@@ -47,6 +76,19 @@ class _EditClassPageState extends State<EditClassPage> {
       final rateTypes = await _userService.getLstRateType(context);
       setState(() {
         _rateTypes = rateTypes;
+
+        // Check if rateTypeId exists in classItem and set _selectedRateType accordingly
+        if (widget.classItem.containsKey('rateTypeId')) {
+          final rateTypeId = widget.classItem['rateTypeId'].toString();
+          final matchingRateType = rateTypes.firstWhere(
+            (type) => type['id'].toString() == rateTypeId,
+            orElse: () => {},
+          );
+
+          if (matchingRateType.isNotEmpty) {
+            _selectedRateType = rateTypeId;
+          }
+        }
       });
     } catch (e) {
       print("Error fetching rate types: $e");
@@ -68,11 +110,77 @@ class _EditClassPageState extends State<EditClassPage> {
     });
   }
 
+  Future<void> _saveSpecialClass() async {
+    final classId = widget.classItem['classId'];
+    final teacherId = 1260; // Replace with actual teacher ID
+    final subjectId = widget.classItem['subjectId'];
+    final schoolYear = 2024;
+    final className = _classNameController.text;
+    final jsonLstDayNum = _dayControllers.entries.map((entry) {
+      int dayId = _getDayId(entry.key);
+      return {
+        'id': dayId,
+        'name': entry.key,
+        'cntLesson': int.tryParse(entry.value.text) ?? 0,
+      };
+    }).toList();
+
+    final success = await _userService.saveSpecialClass(
+      classId: classId,
+      teacherId: teacherId,
+      subjectId: subjectId,
+      schoolYear: schoolYear,
+      className: className,
+      jsonLstDayNum: jsonLstDayNum,
+      periodType: _selectedPeriod ?? '',
+      rateTypeId: _selectedRateType ?? '',
+      context: context,
+    );
+
+    if (success) {
+      _showSuccessDialog();
+    } else {
+      print("Failed to save special class");
+    }
+  }
+
+  int _getDayId(String day) {
+    switch (day) {
+      case "Понедельник":
+        return 1;
+      case "Вторник":
+        return 2;
+      case "Среда":
+        return 3;
+      case "Четверг":
+        return 4;
+      case "Пятница":
+        return 5;
+      case "Суббота":
+        return 6;
+      default:
+        return 0;
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => SuccessDialog(
+        text: 'Выполнено',
+        onClose: () {
+          Navigator.of(context).pop();
+          Navigator.of(this.context).pop('success');
+        },
+      ),
+    );
+  }
+
   void _showAddStudentDialog() async {
     showDialog(
       context: context,
       builder: (context) {
-        return AddStudentDialog(
+        return AddStudentPage(
           userService: _userService,
           onStudentAdded: (selectedStudent) {
             setState(() {
@@ -110,13 +218,11 @@ class _EditClassPageState extends State<EditClassPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextFormField(
+                      enabled: isSpecialClass,
                       controller: _classNameController,
-                      decoration: const InputDecoration(
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFFDCE1E6)),
-                        ),
+                      decoration: CustomInputDecoration.getDecoration(
                         labelText: 'Наименование класса',
-                        border: OutlineInputBorder(),
+                        isSpecialClass: isSpecialClass,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -143,18 +249,16 @@ class _EditClassPageState extends State<EditClassPage> {
                                 child: Text(type['typeName']),
                               );
                             }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRateType = value;
-                              });
-                            },
-                            decoration: const InputDecoration(
-                              enabledBorder: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: Color(0xFFDCE1E6)),
-                              ),
+                            onChanged: isSpecialClass
+                                ? (value) {
+                                    setState(() {
+                                      _selectedRateType = value;
+                                    });
+                                  }
+                                : null,
+                            decoration: CustomInputDecoration.getDecoration(
                               labelText: 'Тип оценивания',
-                              border: OutlineInputBorder(),
+                              isSpecialClass: isSpecialClass,
                             ),
                           ),
                         ),
@@ -173,18 +277,16 @@ class _EditClassPageState extends State<EditClassPage> {
                                 child: Text('Полугодие'),
                               ),
                             ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedPeriod = value;
-                              });
-                            },
-                            decoration: const InputDecoration(
-                              enabledBorder: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: Color(0xFFDCE1E6)),
-                              ),
+                            onChanged: isSpecialClass
+                                ? (value) {
+                                    setState(() {
+                                      _selectedPeriod = value;
+                                    });
+                                  }
+                                : null,
+                            decoration: CustomInputDecoration.getDecoration(
                               labelText: 'Период',
-                              border: OutlineInputBorder(),
+                              isSpecialClass: isSpecialClass,
                             ),
                           ),
                         ),
@@ -193,37 +295,39 @@ class _EditClassPageState extends State<EditClassPage> {
                     const SizedBox(height: 10),
                     _buildPairLayout(),
                     const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Ученики',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: _showAddStudentDialog,
-                        ),
-                      ],
-                    ),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _students.length,
-                      itemBuilder: (context, index) {
-                        final student = _students[index];
-                        return ListTile(
-                          title:
-                              Text(student['fio'] + ' ' + student['className']),
-                        );
-                      },
-                    ),
+                    if (isSpecialClass)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Ученики',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: _showAddStudentDialog,
+                          ),
+                        ],
+                      ),
+                    if (isSpecialClass)
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics:
+                            const NeverScrollableScrollPhysics(), // Без отдельного скролла
+                        itemCount: _students.length,
+                        itemBuilder: (context, index) {
+                          final student = _students[index];
+                          return ListTile(
+                            title: Text(
+                                '${student['fio']} ${student['className']}'),
+                          );
+                        },
+                      ),
                     const SizedBox(height: 10),
                     Center(
                       child: CustomElevatedButton(
-                        onPressed: () {
-                          // Save functionality goes here
-                        },
+                        onPressed: _saveSpecialClass,
                         text: 'Сохранить',
                       ),
                     ),
@@ -251,11 +355,9 @@ class _EditClassPageState extends State<EditClassPage> {
                         _dayControllers.entries.elementAt(i).value.text.isEmpty
                             ? '0'
                             : _dayControllers.entries.elementAt(i).value.text,
-                  decoration: InputDecoration(
+                  decoration: CustomInputDecoration.getDecoration(
                     labelText: _dayControllers.entries.elementAt(i).key,
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFDCE1E6)),
-                    ),
+                    // isSpecialClass: isSpecial,
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [
@@ -275,12 +377,8 @@ class _EditClassPageState extends State<EditClassPage> {
                               .isEmpty
                           ? '0'
                           : _dayControllers.entries.elementAt(i + 1).value.text,
-                    decoration: InputDecoration(
+                    decoration: CustomInputDecoration.getDecoration(
                       labelText: _dayControllers.entries.elementAt(i + 1).key,
-                      border: const OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFFDCE1E6)),
-                      ),
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [
