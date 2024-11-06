@@ -1,4 +1,5 @@
 import 'package:baysa_app/models/cst_class.dart';
+import 'package:baysa_app/screens/dopScreens/add_special_class_page.dart';
 import 'package:baysa_app/screens/dopScreens/edit_class.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -110,14 +111,20 @@ class _MyClassesPageState extends State<MyClassesPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              // Navigate to add special class page
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => AddSpecialClassPage(),
-              //   ),
-              // );
+            onPressed: () async {
+              // Navigate to add special class page and wait for result
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      AddSpecialClassPage(userService: _userService),
+                ),
+              );
+
+              // Check if the result is 'success' and call _fetchClassesData
+              if (result == 'success') {
+                _fetchClassesData();
+              }
             },
           ),
         ],

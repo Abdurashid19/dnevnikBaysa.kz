@@ -697,6 +697,43 @@ class UserService {
     }
   }
 
+  /// Извлекает список предметов, доступных для указанного преподавателя и учебного года
+  Future<List<Map<String, dynamic>>> getListPredmetForSpecClass({
+    required int teacherId,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    try {
+      // Build the API request URL
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/getListPredmetForSpecClass?teacherId=$teacherId&schoolYear=$schoolYear'),
+      );
+
+      // Check if the request was successful
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        // Validate the response code and handle errors
+        if (_handleResponse(data, context)) {
+          // Parse and return the subject data
+          final subjects = jsonDecode(data['data']) as List<dynamic>;
+          return subjects.map((e) => e as Map<String, dynamic>).toList();
+        } else {
+          _showErrorDialog(
+              context, data['message'] ?? 'Ошибка получения списка предметов');
+          return [];
+        }
+      } else {
+        throw Exception('Ошибка получения списка предметов');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+      _showErrorDialog(context, 'Произошла ошибка при получении данных.');
+      return [];
+    }
+  }
+
   // Общий метод для обработки ответа
   bool _handleResponse(Map<String, dynamic> data, BuildContext context) {
     if (data['rv'] != null) {

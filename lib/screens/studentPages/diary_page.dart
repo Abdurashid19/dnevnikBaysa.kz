@@ -349,7 +349,8 @@ class _DiaryPageState extends State<DiaryPage> {
 
         if (grades != null) {
           setState(() {
-            _grades = grades;
+            _grades = sortByLessonDateDescending(grades);
+            print(_grades);
           });
         } else {
           // Обработка ошибки
@@ -365,7 +366,15 @@ class _DiaryPageState extends State<DiaryPage> {
     }
   }
 
-  // Остальные методы остаются без изменений...
+  List<Map<String, dynamic>> sortByLessonDateDescending(
+      List<Map<String, dynamic>> data) {
+    data.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['lessonDateString']);
+      DateTime dateB = DateTime.parse(b['lessonDateString']);
+      return dateB.compareTo(dateA); // Сортировка: от последней даты к ранней
+    });
+    return data;
+  }
 
   // Метод для выхода и очистки данных
   Future<void> _logout() async {

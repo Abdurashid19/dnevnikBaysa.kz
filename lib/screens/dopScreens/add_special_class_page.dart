@@ -1,22 +1,23 @@
 import 'package:baysa_app/models/cst_class.dart';
 import 'package:baysa_app/models/success_dialog.dart';
-import 'package:baysa_app/screens/dopScreens/add_student_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:baysa_app/services/user_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class EditClassPage extends StatefulWidget {
-  final Map<String, dynamic> classItem;
+class AddSpecialClassPage extends StatefulWidget {
+  final UserService userService;
 
-  const EditClassPage({Key? key, required this.classItem}) : super(key: key);
+  const AddSpecialClassPage({
+    Key? key,
+    required this.userService,
+  }) : super(key: key);
 
   @override
-  _EditClassPageState createState() => _EditClassPageState();
+  _AddSpecialClassPageState createState() => _AddSpecialClassPageState();
 }
 
-class _EditClassPageState extends State<EditClassPage> {
-  final UserService _userService = UserService();
+class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
   final TextEditingController _classNameController = TextEditingController();
   final Map<String, TextEditingController> _dayControllers = {
     "Понедельник": TextEditingController(),
@@ -26,46 +27,43 @@ class _EditClassPageState extends State<EditClassPage> {
     "Пятница": TextEditingController(),
     "Суббота": TextEditingController(),
   };
+  int? _schoolYear;
+  int? _teacherId;
 
   List<Map<String, dynamic>> _rateTypes = [];
+  List<Map<String, dynamic>> _subjects = [];
   String? _selectedRateType;
   String? _selectedPeriod;
+  String? _selectedSubject;
   bool _isLoading = false;
-  List<Map<String, dynamic>> _students = [];
-
-  bool get isSpecialClass => widget.classItem['typeClass'] == 1;
 
   @override
   void initState() {
     super.initState();
-    _classNameController.text = widget.classItem['className'];
-    _selectedPeriod = widget.classItem['periodType'];
-    _initializeDayControllers();
-    _fetchRateTypes();
-    _fetchStudents();
+    _loadInitialData();
   }
 
-  void _initializeDayControllers() {
-    final Map<int, String> idToWeekday = {
-      1: "Понедельник",
-      2: "Вторник",
-      3: "Среда",
-      4: "Четверг",
-      5: "Пятница",
-      6: "Суббота",
-    };
+  Future<void> _loadInitialData() async {
+    try {
+      // Получаем данные пользователя из SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      _schoolYear = prefs.getInt('schoolYear') ?? 2024;
+      _teacherId = prefs.getInt('userId');
 
-    if (widget.classItem.containsKey('lst')) {
-      for (var item in widget.classItem['lst']) {
-        int id = item['id'];
-        int cntLesson = item['cntLesson'];
+      if (_teacherId == null) {
+        final userEmail = prefs.getString('userEmail') ?? '';
+        await widget.userService.checkUserMs(userEmail, context);
 
-        String? weekday = idToWeekday[id];
+        // Повторно получаем данные после загрузки
 
-        if (weekday != null && _dayControllers.containsKey(weekday)) {
-          _dayControllers[weekday]?.text = cntLesson.toString();
-        }
+        _schoolYear = prefs.getInt('schoolYear') ?? 2024;
+        _teacherId = prefs.getInt('userId');
       }
+
+      _fetchRateTypes();
+      _fetchSubjects();
+    } catch (e) {
+      print('Ошибка загрузки данных: $e');
     }
   }
 
@@ -73,22 +71,9 @@ class _EditClassPageState extends State<EditClassPage> {
     setState(() => _isLoading = true);
 
     try {
-      final rateTypes = await _userService.getLstRateType(context);
+      final rateTypes = await widget.userService.getLstRateType(context);
       setState(() {
         _rateTypes = rateTypes;
-
-        // Check if rateTypeId exists in classItem and set _selectedRateType accordingly
-        if (widget.classItem.containsKey('rateTypeId')) {
-          final rateTypeId = widget.classItem['rateTypeId'].toString();
-          final matchingRateType = rateTypes.firstWhere(
-            (type) => type['id'].toString() == rateTypeId,
-            orElse: () => {},
-          );
-
-          if (matchingRateType.isNotEmpty) {
-            _selectedRateType = rateTypeId;
-          }
-        }
       });
     } catch (e) {
       print("Error fetching rate types: $e");
@@ -97,29 +82,30 @@ class _EditClassPageState extends State<EditClassPage> {
     }
   }
 
-  Future<void> _fetchStudents() async {
+  Future<void> _fetchSubjects() async {
     setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
-    final schoolYear = prefs.getInt('schoolYear') ?? 2024;
 
-    final response = await _userService.getListStudentForSpecClass(
-      classId: widget.classItem['classId'],
-      schoolYear: schoolYear,
-      context: context,
-    );
-    setState(() {
-      _students = response;
-      _isLoading = false;
-    });
+    try {
+      final subjects = await widget.userService.getListPredmetForSpecClass(
+        teacherId: _teacherId!,
+        schoolYear: _schoolYear!,
+        context: context,
+      );
+
+      setState(() {
+        _subjects = subjects;
+        if (_subjects.length == 1) {
+          _selectedSubject = _subjects.first['id'].toString();
+        }
+      });
+    } catch (e) {
+      print("Error fetching subjects: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _saveSpecialClass() async {
-    final prefs = await SharedPreferences.getInstance();
-    final schoolYear = prefs.getInt('schoolYear') ?? 2024;
-    final teacherId = prefs.getInt('userId');
-
-    final classId = widget.classItem['classId'];
-    final subjectId = widget.classItem['subjectId'];
     final className = _classNameController.text;
     final jsonLstDayNum = _dayControllers.entries.map((entry) {
       int dayId = _getDayId(entry.key);
@@ -130,11 +116,11 @@ class _EditClassPageState extends State<EditClassPage> {
       };
     }).toList();
 
-    final success = await _userService.saveSpecialClass(
-      classId: classId,
-      teacherId: teacherId!,
-      subjectId: subjectId,
-      schoolYear: schoolYear,
+    final success = await widget.userService.saveSpecialClass(
+      classId: 0, // New class
+      teacherId: _teacherId!,
+      subjectId: int.tryParse(_selectedSubject ?? '') ?? 0,
+      schoolYear: _schoolYear!,
       className: className,
       jsonLstDayNum: jsonLstDayNum,
       periodType: _selectedPeriod ?? '',
@@ -172,37 +158,13 @@ class _EditClassPageState extends State<EditClassPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) => SuccessDialog(
-        text: 'Выполнено',
+        text: 'Класс успешно добавлен',
         onClose: () {
           Navigator.of(context).pop();
           Navigator.of(this.context).pop('success');
         },
       ),
     );
-  }
-
-  void _showAddStudentDialog() async {
-    final result = await showDialog(
-      context: context,
-      builder: (context) {
-        return AddStudentPage(
-          classId: widget.classItem['classId'],
-          schoolYear: 2024,
-          userService: _userService,
-          onStudentAdded: (selectedStudent) {
-            setState(() {
-              _students.add(selectedStudent);
-            });
-            // Close dialog with "success" result
-            Navigator.of(context).pop('success');
-          },
-        );
-      },
-    );
-
-    if (result == 'success') {
-      _fetchStudents();
-    }
   }
 
   @override
@@ -217,7 +179,7 @@ class _EditClassPageState extends State<EditClassPage> {
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        title: const Text('Редактирование класса'),
+        title: const Text('Добавление спец.класса'),
         centerTitle: true,
         scrolledUnderElevation: 0.0,
         backgroundColor: Cst.backgroundAppBar,
@@ -231,20 +193,31 @@ class _EditClassPageState extends State<EditClassPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextFormField(
-                      enabled: isSpecialClass,
                       controller: _classNameController,
                       decoration: CustomInputDecoration.getDecoration(
                         labelText: 'Наименование класса',
-                        isSpecialClass: isSpecialClass,
+                        isSpecialClass: true,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    TextFormField(
-                      initialValue: widget.classItem['subjectName'],
-                      enabled: false,
-                      decoration: const InputDecoration(
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      dropdownColor: Colors.white,
+                      value: _selectedSubject,
+                      items: _subjects.map((subject) {
+                        return DropdownMenuItem<String>(
+                          value: subject['id'].toString(),
+                          child: Text(subject['name']),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedSubject = value;
+                        });
+                      },
+                      decoration: CustomInputDecoration.getDecoration(
                         labelText: 'Предмет',
-                        border: OutlineInputBorder(),
+                        isSpecialClass: true,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -262,16 +235,14 @@ class _EditClassPageState extends State<EditClassPage> {
                                 child: Text(type['typeName']),
                               );
                             }).toList(),
-                            onChanged: isSpecialClass
-                                ? (value) {
-                                    setState(() {
-                                      _selectedRateType = value;
-                                    });
-                                  }
-                                : null,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedRateType = value;
+                              });
+                            },
                             decoration: CustomInputDecoration.getDecoration(
                               labelText: 'Тип оценивания',
-                              isSpecialClass: isSpecialClass,
+                              isSpecialClass: true,
                             ),
                           ),
                         ),
@@ -290,16 +261,14 @@ class _EditClassPageState extends State<EditClassPage> {
                                 child: Text('Полугодие'),
                               ),
                             ],
-                            onChanged: isSpecialClass
-                                ? (value) {
-                                    setState(() {
-                                      _selectedPeriod = value;
-                                    });
-                                  }
-                                : null,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPeriod = value;
+                              });
+                            },
                             decoration: CustomInputDecoration.getDecoration(
                               labelText: 'Период',
-                              isSpecialClass: isSpecialClass,
+                              isSpecialClass: true,
                             ),
                           ),
                         ),
@@ -307,36 +276,6 @@ class _EditClassPageState extends State<EditClassPage> {
                     ),
                     const SizedBox(height: 10),
                     _buildPairLayout(),
-                    const SizedBox(height: 10),
-                    if (isSpecialClass)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Ученики',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: _showAddStudentDialog,
-                          ),
-                        ],
-                      ),
-                    if (isSpecialClass)
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics:
-                            const NeverScrollableScrollPhysics(), // Без отдельного скролла
-                        itemCount: _students.length,
-                        itemBuilder: (context, index) {
-                          final student = _students[index];
-                          return ListTile(
-                            title: Text(
-                                '${student['fio']} ${student['className']}'),
-                          );
-                        },
-                      ),
                     const SizedBox(height: 10),
                     Center(
                       child: CustomElevatedButton(
@@ -370,11 +309,10 @@ class _EditClassPageState extends State<EditClassPage> {
                             : _dayControllers.entries.elementAt(i).value.text,
                   decoration: CustomInputDecoration.getDecoration(
                     labelText: _dayControllers.entries.elementAt(i).key,
-                    // isSpecialClass: isSpecial,
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly, // Allow only digits
+                    FilteringTextInputFormatter.digitsOnly,
                   ],
                 ),
               ),
