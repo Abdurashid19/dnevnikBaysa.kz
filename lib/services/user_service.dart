@@ -549,6 +549,36 @@ class UserService {
     }
   }
 
+  /// Метод для добавления учеников
+  Future<bool> addStudentForSpecClass({
+    required int classId,
+    required int studentId,
+    required int schoolYear,
+    required BuildContext context,
+  }) async {
+    final url =
+        '$baseUrl/addStudentForSpecClass?classId=$classId&studentId=$studentId&schoolYear=$schoolYear';
+
+    try {
+      final response = await http.get(Uri.parse(url), headers: {
+        'accept': 'application/json, text/plain, */*',
+      });
+
+      final data = json.decode(response.body);
+
+      if (_handleResponse(data, context)) {
+        return true;
+      } else {
+        _showErrorDialog(
+            context, data['message'] ?? 'Ошибка при добавлении ученика');
+        return false;
+      }
+    } catch (e) {
+      _showErrorDialog(context, 'Произошла ошибка при добавлении ученика.');
+      return false;
+    }
+  }
+
   // Метод для получения списка учеников в спец.классе
   Future<List<Map<String, dynamic>>> getListStudentForSpecClass({
     required int classId,

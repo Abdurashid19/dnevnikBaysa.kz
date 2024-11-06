@@ -1,15 +1,20 @@
 import 'package:baysa_app/models/cst_class.dart';
+import 'package:baysa_app/models/success_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:baysa_app/services/user_service.dart';
 
 class AddStudentPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onStudentAdded;
   final UserService userService;
+  final int classId;
+  final int schoolYear;
 
   const AddStudentPage({
     Key? key,
     required this.onStudentAdded,
     required this.userService,
+    required this.classId,
+    required this.schoolYear,
   }) : super(key: key);
 
   @override
@@ -30,7 +35,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
 
     final results =
         await widget.userService.getListStudentForSpecClassForSelect(
-      schoolYear: 2024,
+      schoolYear: widget.schoolYear,
       query: query,
       context: context,
     );
@@ -39,6 +44,52 @@ class _AddStudentPageState extends State<AddStudentPage> {
       _searchResults = results;
       isSearching = false;
     });
+  }
+
+  Future<void> _saveStudent() async {
+    if (_selectedStudent != null) {
+      final studentId = _selectedStudent!['id'];
+      final isSuccess = await widget.userService.addStudentForSpecClass(
+        classId: widget.classId,
+        studentId: studentId,
+        schoolYear: widget.schoolYear,
+        context: context,
+      );
+
+      if (isSuccess) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => SuccessDialog(
+            text: 'Ученик добавлен',
+            onClose: () {
+              Navigator.of(context).pop();
+              Navigator.of(this.context).pop('success');
+            },
+          ),
+        );
+        // showDialog(
+        //   context: context,
+        //   builder: (BuildContext context) => AlertDialog(
+        //     content: const Text('Ученик добавлен'),
+        //     actions: [
+        //       TextButton(
+        //         onPressed: () {
+        //           Navigator.of(context).pop();
+        //           Navigator.of(this.context).pop('success');
+        //         },
+        //         child: const Text('ОК'),
+        //       ),
+        //     ],
+        //   ),
+        // );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Пожалуйста, выберите ученика'),
+        ),
+      );
+    }
   }
 
   @override
@@ -81,7 +132,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
               ),
               const SizedBox(height: 10),
               Container(
-                height: 200, // Set a fixed height to limit ListView.builder
+                height: 350, // Limit the height for the ListView
                 child: ListView.builder(
                   shrinkWrap: true,
                   physics: const ClampingScrollPhysics(),
@@ -103,18 +154,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
               const SizedBox(height: 20),
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_selectedStudent != null) {
-                      widget.onStudentAdded(_selectedStudent!);
-                      Navigator.pop(context);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Пожалуйста, выберите ученика'),
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _saveStudent,
                   child: const Text('Сохранить'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
@@ -127,47 +167,6 @@ class _AddStudentPageState extends State<AddStudentPage> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Function to open AddStudentPage
-void _openAddStudentPage(BuildContext context, UserService userService) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => AddStudentPage(
-        onStudentAdded: (student) {
-          // Handle the added student here
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Добавлен ученик: ${student['fio']}'),
-            ),
-          );
-          // You can add logic to update the list or database here
-        },
-        userService: userService,
-      ),
-    ),
-  );
-}
-
-// Example usage in a parent widget
-class ParentWidget extends StatelessWidget {
-  final UserService userService = UserService();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Главная страница'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () => _openAddStudentPage(context, userService),
-          child: const Text('Добавить ученика в спец.класс'),
         ),
       ),
     );

@@ -177,19 +177,28 @@ class _EditClassPageState extends State<EditClassPage> {
   }
 
   void _showAddStudentDialog() async {
-    showDialog(
+    final result = await showDialog(
       context: context,
       builder: (context) {
         return AddStudentPage(
+          classId: widget.classItem['classId'],
+          schoolYear: 2024,
           userService: _userService,
           onStudentAdded: (selectedStudent) {
             setState(() {
               _students.add(selectedStudent);
             });
+            // Close dialog with "success" result
+            Navigator.of(context).pop('success');
           },
         );
       },
     );
+
+    // If the result is "success", refresh the student list
+    if (result == 'success') {
+      _fetchStudents();
+    }
   }
 
   @override
