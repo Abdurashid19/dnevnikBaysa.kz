@@ -436,17 +436,23 @@ class UserService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
 
-        // Check if the response is successful
-        if (_handleResponse(data, context)) {
-          final subjects = data['lstPredmet'] as List<dynamic>;
-          print('Subjects for add lesson: $subjects');
-          return subjects.map((e) => e as Map<String, dynamic>).toList();
+        if (_handleResponseData(data, context)) {
+          // Проверка, если поле 'data' не пустое и не null
+          final subjectsData = data['data'];
+          if (subjectsData != null && subjectsData.isNotEmpty) {
+            final subjects = jsonDecode(subjectsData) as List<dynamic>;
+            return subjects.map((e) => e as Map<String, dynamic>).toList();
+          } else {
+            print('No subjects found or data is null.');
+            return [];
+          }
         }
       } else {
-        throw Exception('Failed to fetch subjects');
+        throw Exception('Ошибка получения предметов');
       }
     } catch (e) {
       print('Error fetching subjects: $e');
+      _showErrorDialog(context, 'Произошла ошибка при получении данных');
     }
     return [];
   }
@@ -752,6 +758,28 @@ class UserService {
         // Обработка других отрицательных кодов ошибок
         _showErrorDialog(
             context, data['rv']['retStr'] ?? 'Неизвестная ошибка.');
+        return false;
+      }
+    }
+    return true; // Если retNum == 0, считаем, что все прошло успешно
+  }
+
+  bool _handleResponseData(Map<String, dynamic> data, BuildContext context) {
+    if (data['code'] != null) {
+      int retNum = data['code'];
+
+      if (retNum == -2) {
+        // Сессия неактивна
+        _showSessionInactiveDialog(context, data['message'] ?? '');
+        _clearStorage();
+        return false;
+      } else if (retNum == -1) {
+        // Общая ошибка
+        _showErrorDialog(context, data['message'] ?? '');
+        return false;
+      } else if (retNum < 0) {
+        // Обработка других отрицательных кодов ошибок
+        _showErrorDialog(context, data['message'] ?? 'Неизвестная ошибка.');
         return false;
       }
     }

@@ -19,8 +19,20 @@ class LoginScreen extends StatelessWidget {
     }
   }
 
+  bool _isTestEnvironment() {
+    // Проверка на тестовую среду для веба
+    if (kIsWeb) {
+      final uri = Uri.base.toString();
+      return uri.contains('test') || uri.contains('localhost');
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isTestEnvironment =
+        _isTestEnvironment(); // Проверка на тестовую среду
+
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       body: Center(
@@ -97,8 +109,6 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // const Spacer(),
               FutureBuilder<String>(
                 future: _getAppVersion(),
                 builder: (context, snapshot) {
@@ -117,6 +127,17 @@ class LoginScreen extends StatelessWidget {
                   }
                 },
               ),
+              const SizedBox(height: 5),
+              if (isTestEnvironment)
+                Center(
+                  child: Text(
+                    'Тестовая версия',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
