@@ -105,74 +105,76 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
   }
 
   Future<void> _saveLesson() async {
-    setState(() => isLoading = true); // Включаем прелоудер
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final _sid = prefs.getString('sid');
-      final _teacherId = prefs.getInt('userId');
-      final _schoolYear = prefs.getInt('schoolYear') ?? 2024;
-      final int themeId = _selectedTheme!['id'];
-      final int gradeType = _selectedGradeType!['id'];
+    if (_selectedTheme != null) {
+      setState(() => isLoading = true); // Включаем прелоудер
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final _sid = prefs.getString('sid');
+        final _teacherId = prefs.getInt('userId');
+        final _schoolYear = prefs.getInt('schoolYear') ?? 2024;
+        final int themeId = _selectedTheme!['id'];
+        final int gradeType = _selectedGradeType!['id'];
 
-      final isSaved = await _userService.recLesson(
-        recId: widget.lesson['id'],
-        classId: widget.lesson['classId'],
-        date: _dateController.text,
-        subjectId: widget.lesson['subjectId'],
-        teacherId: _teacherId!,
-        themeId: themeId,
-        maxPoint: int.parse(_maxPointController.text),
-        gradeType: gradeType,
-        sid: _sid!,
-        schoolYear: _schoolYear,
-        context: context,
-      );
+        final isSaved = await _userService.recLesson(
+          recId: widget.lesson['id'],
+          classId: widget.lesson['classId'],
+          date: _dateController.text,
+          subjectId: widget.lesson['subjectId'],
+          teacherId: _teacherId!,
+          themeId: themeId,
+          maxPoint: int.parse(_maxPointController.text),
+          gradeType: gradeType,
+          sid: _sid!,
+          schoolYear: _schoolYear,
+          context: context,
+        );
 
-      if (isSaved['retNum'] == 0) {
-        // Показ успешного сообщения
-        showDialog(
-          context: context,
-          builder: (BuildContext context) => SuccessDialog(
-            text: 'Урок успешно сохранен!',
-            onClose: () {
-              Navigator.of(context).pop(); // Закрываем диалог
-              Navigator.of(this.context)
-                  .pop('success'); // Закрываем экран и передаем результат
-            },
-          ),
-        );
-      } else if (isSaved['retNum'] == -1) {
-        // Показ сообщения об ошибке
-        showDialog(
-          context: context,
-          builder: (BuildContext context) => ErrorDialog(
-            text: isSaved['retStr'] ?? 'Ошибка при сохранении урока.',
-            onClose: () {
-              Navigator.of(context).pop(); // Закрываем диалог
-              // Navigator.of(this.context)
-              //     .pop('error'); // Закрываем экран и передаем результат
-            },
-          ),
-        );
-      } else {
-        // Показ сообщения об ошибке
-        showDialog(
-          context: context,
-          builder: (BuildContext context) => ErrorDialog(
-            text: isSaved['retStr'] ?? 'Ошибка при сохранении урока.',
-            onClose: () {
-              Navigator.of(context).pop(); // Закрываем диалог
-              // Navigator.of(this.context)
-              //     .pop('error'); // Закрываем экран и передаем результат
-            },
-          ),
-        );
+        if (isSaved['retNum'] == 0) {
+          // Показ успешного сообщения
+          showDialog(
+            context: context,
+            builder: (BuildContext context) => SuccessDialog(
+              text: 'Урок успешно сохранен!',
+              onClose: () {
+                Navigator.of(context).pop(); // Закрываем диалог
+                Navigator.of(this.context)
+                    .pop('success'); // Закрываем экран и передаем результат
+              },
+            ),
+          );
+        } else if (isSaved['retNum'] == -1) {
+          // Показ сообщения об ошибке
+          showDialog(
+            context: context,
+            builder: (BuildContext context) => ErrorDialog(
+              text: isSaved['retStr'] ?? 'Ошибка при сохранении урока.',
+              onClose: () {
+                Navigator.of(context).pop(); // Закрываем диалог
+                // Navigator.of(this.context)
+                //     .pop('error'); // Закрываем экран и передаем результат
+              },
+            ),
+          );
+        } else {
+          // Показ сообщения об ошибке
+          showDialog(
+            context: context,
+            builder: (BuildContext context) => ErrorDialog(
+              text: isSaved['retStr'] ?? 'Ошибка при сохранении урока.',
+              onClose: () {
+                Navigator.of(context).pop(); // Закрываем диалог
+                // Navigator.of(this.context)
+                //     .pop('error'); // Закрываем экран и передаем результат
+              },
+            ),
+          );
+        }
+      } catch (e) {
+        print('Ошибка при сохранении урока: $e');
+      } finally {
+        setState(() => isLoading = false); // Отключаем прелоудер
       }
-    } catch (e) {
-      print('Ошибка при сохранении урока: $e');
-    } finally {
-      setState(() => isLoading = false); // Отключаем прелоудер
-    }
+    } else {}
   }
 
   // Функция для показа диалога об успешном сохранении
@@ -232,8 +234,9 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Редактирование урока',
+          style: TextStyle(fontSize: Cst.appBarTextSize, color: Cst.color),
         ),
         scrolledUnderElevation: 0.0,
         centerTitle: true,
@@ -256,122 +259,84 @@ class _LessonDetailsPageState extends State<LessonDetailsPage> {
                         Row(
                           children: [
                             Expanded(
-                              child: TextFormField(
-                                initialValue: widget.lesson['className'],
-                                decoration: const InputDecoration(
-                                  labelText: 'Класс',
-                                  border: OutlineInputBorder(),
-                                ),
+                              child: AppTextFormField(
+                                controller: TextEditingController(
+                                    text: widget.lesson['className']),
+                                labelText: 'Класс',
                                 enabled: false,
-                                maxLines: null,
                               ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: TextFormField(
-                                initialValue: widget.lesson['subjectName'],
-                                decoration: const InputDecoration(
-                                  labelText: 'Предмет',
-                                  border: OutlineInputBorder(),
-                                ),
+                              child: AppTextFormField(
+                                controller: TextEditingController(
+                                    text: widget.lesson['subjectName']),
+                                labelText: 'Предмет',
                                 enabled: false,
-                                maxLines: null,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        TextFormField(
+                        AppTextFormField(
                           controller: _dateController,
-                          decoration: InputDecoration(
-                            labelText: 'Дата',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.calendar_today),
-                              onPressed: () =>
-                                  _selectDate(context, _dateController),
-                            ),
-                          ),
+                          labelText: 'Дата',
                           keyboardType: TextInputType.datetime,
-                          maxLines: null,
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () =>
+                                _selectDate(context, _dateController),
+                          ),
+                          onTap: () {
+                            _selectDate(context,
+                                _dateController); // Optional: Trigger date picker on tap as well
+                          },
                         ),
                         const SizedBox(height: 10),
                         Row(
                           children: [
                             Expanded(
-                              child:
-                                  DropdownButtonFormField<Map<String, dynamic>>(
-                                dropdownColor: Colors.white,
+                              child: AppDropdownField<Map<String, dynamic>>(
                                 value: _selectedGradeType,
-                                items: _gradeTypes
-                                    .map((type) =>
-                                        DropdownMenuItem<Map<String, dynamic>>(
-                                          value: type,
-                                          child: Text(type['name']),
-                                        ))
-                                    .toList(),
+                                items: _gradeTypes,
+                                itemLabelBuilder: (type) =>
+                                    type['name'], // Builds the display text
+                                labelText: 'Тип занятия',
                                 onChanged: (value) {
                                   setState(() {
                                     _selectedGradeType = value;
                                   });
                                 },
-                                decoration: const InputDecoration(
-                                  labelText: 'Тип занятия',
-                                  border: OutlineInputBorder(),
-                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: TextFormField(
+                              child: AppTextFormField(
                                 controller: _maxPointController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Максимальный балл',
-                                  border: OutlineInputBorder(),
-                                ),
+                                labelText: 'Максимальный балл',
                                 keyboardType: TextInputType.number,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        DropdownButtonFormField<Map<String, dynamic>?>(
-                          dropdownColor: Colors.white,
+                        AppDropdownField<Map<String, dynamic>?>(
                           value: _selectedTheme,
-                          items: _themes
-                              .map((theme) =>
-                                  DropdownMenuItem<Map<String, dynamic>?>(
-                                    value: theme,
-                                    child: Text(
-                                      theme['name'],
-                                      softWrap: true,
-                                      maxLines: null,
-                                    ),
-                                  ))
-                              .toList(),
+                          items: _themes,
+                          itemLabelBuilder: (theme) =>
+                              theme!['name'], // Builds the display text
+                          labelText: 'Тема урока',
                           onChanged: (value) {
                             setState(() {
                               _selectedTheme = value;
                             });
                           },
-                          decoration: const InputDecoration(
-                            labelText: 'Тема урока',
-                            border: OutlineInputBorder(),
-                          ),
-                          isExpanded: true,
                         ),
-                        const SizedBox(height: 20),
+                        // const SizedBox(height: 20),
                         Center(
-                          child: ElevatedButton(
-                            onPressed:
-                                _selectedTheme != null ? _saveLesson : null,
-                            child: const Text('Сохранить'),
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 50, vertical: 15),
-                            ),
+                          child: CustomElevatedButton(
+                            onPressed: _saveLesson,
+                            text: 'Сохранить',
                           ),
                         ),
                       ],

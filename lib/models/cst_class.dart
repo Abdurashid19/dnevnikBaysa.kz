@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class Cst {
@@ -11,7 +12,26 @@ class Cst {
   static Color backgroundAppBar = Color(0xFFffffff);
   static Color backgroundCard = Color(0xFFffffff);
   static Color backgroundApp = Color(0xFFEBEDF0);
-  static Color color = Color(0xFF4d4d4d);
+  static Color color = Color.fromARGB(255, 0, 0, 0);
+
+  /// Размер текста в AppBar
+  static double appBarTextSize = 18.0;
+
+  static TextStyle textFieldLabelStyle = TextStyle(
+    fontSize: 13.0,
+    color: Colors.grey[800],
+  );
+
+  // Border style constants
+  static double textFieldBorderWidth = 1.0;
+  static double textFieldFocusedBorderWidth = 1.0;
+  static Color textFieldBorderColor = Colors.grey;
+  static Color textFieldFocusedBorderColor = Colors.blue;
+
+  static const TextStyle textFieldTextStyle = TextStyle(
+    fontSize: 13, // Default font size for dropdown text
+    color: Colors.black,
+  );
 
   /// конвертирует цвет
   static Color marketColor(String colors2) {
@@ -95,8 +115,8 @@ class CustomElevatedButton extends StatelessWidget {
     Key? key,
     required this.onPressed,
     required this.text,
-    this.padding = const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-    this.fontSize = 18,
+    this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    this.fontSize = 14,
     this.backgroundColor = Colors.blue,
     this.foregroundColor = Colors.white,
   }) : super(key: key);
@@ -258,4 +278,139 @@ String formatDate(DateTime date) {
 String formatDateString(String date) {
   final parsedDate = DateTime.parse(date);
   return DateFormat('dd.MM.yyyy').format(parsedDate);
+}
+
+class AppTextFormField extends StatelessWidget {
+  final TextEditingController? controller;
+  final String? initialValue;
+  final String labelText;
+  final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final Widget? suffixIcon;
+  final bool obscureText;
+  final Function()? onTap;
+  final ValueChanged<String>? onChanged; // Добавлено
+  final bool readOnly;
+  final bool enabled;
+
+  const AppTextFormField({
+    Key? key,
+    this.controller,
+    this.initialValue,
+    required this.labelText,
+    this.keyboardType = TextInputType.text,
+    this.inputFormatters,
+    this.suffixIcon,
+    this.obscureText = false,
+    this.onTap,
+    this.onChanged, // Добавлено
+    this.readOnly = false,
+    this.enabled = true,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      initialValue: controller == null ? initialValue : null, // Логика
+      readOnly: readOnly || !enabled,
+      onTap: enabled ? onTap : null,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged, // Логика
+      style: enabled
+          ? Cst.textFieldTextStyle
+          : Cst.textFieldTextStyle.copyWith(color: Colors.grey),
+      enabled: enabled,
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: Cst.textFieldLabelStyle.copyWith(
+          color: enabled ? null : Colors.grey,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(
+            color: Cst.textFieldBorderColor,
+            width: Cst.textFieldBorderWidth,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: enabled ? Cst.textFieldBorderColor : Colors.grey,
+            width: Cst.textFieldBorderWidth,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: enabled ? Cst.textFieldFocusedBorderColor : Colors.grey,
+            width: Cst.textFieldFocusedBorderWidth,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        suffixIcon: suffixIcon,
+      ),
+    );
+  }
+}
+
+class AppDropdownField<T> extends StatelessWidget {
+  final String labelText;
+  final List<T> items;
+  final T? value;
+  final ValueChanged<T?>? onChanged;
+  final String Function(T) itemLabelBuilder;
+
+  const AppDropdownField({
+    Key? key,
+    required this.labelText,
+    required this.items,
+    required this.value,
+    required this.onChanged,
+    required this.itemLabelBuilder,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<T>(
+      dropdownColor: Colors.white,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(
+            color: Cst.textFieldBorderColor,
+            width: Cst.textFieldBorderWidth,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Cst.textFieldBorderColor,
+            width: Cst.textFieldBorderWidth,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: Cst.textFieldFocusedBorderColor,
+            width: Cst.textFieldFocusedBorderWidth,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 10.0,
+          horizontal: 10.0,
+        ),
+      ),
+      style: Cst.textFieldTextStyle,
+      isDense: true,
+      isExpanded: true,
+      items: items.map<DropdownMenuItem<T>>((T value) {
+        return DropdownMenuItem<T>(
+          value: value,
+          child: Text(itemLabelBuilder(value)),
+        );
+      }).toList(),
+      value: this.value,
+      onChanged: onChanged,
+    );
+  }
 }

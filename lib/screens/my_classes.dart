@@ -24,21 +24,32 @@ class _MyClassesPageState extends State<MyClassesPage> {
   }
 
   Future<void> _fetchClassesData() async {
+    if (!mounted) return; // Проверяем, смонтирован ли виджет
     setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
-    final teacherId = prefs.getInt('userId');
-    final schoolYear = prefs.getInt('schoolYear') ?? 2024;
 
-    if (teacherId != null) {
-      final classesResponse = await _userService.getListClass17(
-        teacherId: teacherId,
-        schoolYear: schoolYear,
-        context: context,
-      );
-      setState(() {
-        _classesData = classesResponse;
-        _isLoading = false;
-      });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final teacherId = prefs.getInt('userId');
+      final schoolYear = prefs.getInt('schoolYear') ?? 2024;
+
+      if (teacherId != null) {
+        final classesResponse = await _userService.getListClass17(
+          teacherId: teacherId,
+          schoolYear: schoolYear,
+          context: context,
+        );
+
+        if (!mounted) return; // Повторная проверка перед setState
+        setState(() {
+          _classesData = classesResponse;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      print("Ошибка при загрузке данных классов: $e");
     }
   }
 
@@ -87,7 +98,7 @@ class _MyClassesPageState extends State<MyClassesPage> {
                     Text(
                       '${classItem['className']} ${classItem['subjectName']} ${classItem['typeClass'] == 1 ? 'Спец.класс' : ''}',
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 0),
                     Text('${classItem['dayNum']}'),
                   ],
                 ),
@@ -104,30 +115,33 @@ class _MyClassesPageState extends State<MyClassesPage> {
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        title: const Text('Мои классы'),
+        title: Text(
+          'Мои классы',
+          style: TextStyle(fontSize: Cst.appBarTextSize, color: Cst.color),
+        ),
         centerTitle: true,
         scrolledUnderElevation: 0.0,
         backgroundColor: Cst.backgroundAppBar,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () async {
-              // Navigate to add special class page and wait for result
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      AddSpecialClassPage(userService: _userService),
-                ),
-              );
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.add),
+        //     onPressed: () async {
+        //       // Navigate to add special class page and wait for result
+        //       final result = await Navigator.push(
+        //         context,
+        //         MaterialPageRoute(
+        //           builder: (context) =>
+        //               AddSpecialClassPage(userService: _userService),
+        //         ),
+        //       );
 
-              // Check if the result is 'success' and call _fetchClassesData
-              if (result == 'success') {
-                _fetchClassesData();
-              }
-            },
-          ),
-        ],
+        //       // Check if the result is 'success' and call _fetchClassesData
+        //       if (result == 'success') {
+        //         _fetchClassesData();
+        //       }
+        //     },
+        //   ),
+        // ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(5.0),
@@ -142,6 +156,28 @@ class _MyClassesPageState extends State<MyClassesPage> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          // Navigate to add special class page and wait for result
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  AddSpecialClassPage(userService: _userService),
+            ),
+          );
+
+          // Check if the result is 'success' and call _fetchClassesData
+          if (result == 'success') {
+            _fetchClassesData();
+          }
+        },
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        backgroundColor: Colors.blue,
       ),
     );
   }

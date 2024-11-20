@@ -119,6 +119,7 @@ class _ListActivitiesState extends State<ListActivities> {
     final savedClass = prefs.getString('selectedClass');
     final savedSubject = prefs.getString('selectedSubject');
 
+    if (!mounted) return; // Проверяем, смонтирован ли виджет
     if (savedStartDate != null &&
         savedEndDate != null &&
         savedClass != null &&
@@ -167,9 +168,11 @@ class _ListActivitiesState extends State<ListActivities> {
     await prefs.setString('selectedClass', _selectedClass!);
     await prefs.setString('selectedSubject', _selectedSubject!);
 
-    setState(() {
-      _isLoadingLessons = true; // Начинаем загрузку
-    });
+    if (mounted) {
+      setState(() {
+        _isLoadingLessons = true; // Начинаем загрузку
+      });
+    }
 
     try {
       final classId = _classMap[_selectedClass]!;
@@ -191,15 +194,19 @@ class _ListActivitiesState extends State<ListActivities> {
         context: context,
       );
 
-      setState(() {
-        _lessons = sortByLessonDateDescending(lessons);
-      });
+      if (mounted) {
+        setState(() {
+          _lessons = sortByLessonDateDescending(lessons);
+        });
+      }
     } catch (e) {
       print('Ошибка при обновлении данных: $e');
     } finally {
-      setState(() {
-        _isLoadingLessons = false; // Завершаем загрузку
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingLessons = false; // Завершаем загрузку
+        });
+      }
     }
   }
 
@@ -256,8 +263,9 @@ class _ListActivitiesState extends State<ListActivities> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Список занятий',
+          style: TextStyle(fontSize: Cst.appBarTextSize, color: Cst.color),
         ),
         centerTitle: true,
         scrolledUnderElevation: 0.0,
@@ -282,9 +290,9 @@ class _ListActivitiesState extends State<ListActivities> {
                     Text(
                       '$_fio',
                       style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                          fontSize: 15, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(
@@ -296,19 +304,34 @@ class _ListActivitiesState extends State<ListActivities> {
                                 'Конец периода', _endDateController)),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 2),
                     _buildClassDropdown(),
-                    const SizedBox(height: 10),
-                    _buildSubjectDropdown(),
-                    const SizedBox(height: 20),
-                    if (_selectedClass != null && _selectedSubject != null)
-                      Center(
-                        child: CustomElevatedButton(
-                          onPressed: _updateLessons,
-                          text: 'Обновить',
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: _buildSubjectDropdown(),
+                            ),
+                            const SizedBox(width: 4),
+                            if (_selectedClass != null &&
+                                _selectedSubject != null)
+                              Expanded(
+                                flex: 1,
+                                child: CustomElevatedButton(
+                                  onPressed: _updateLessons,
+                                  text: 'Обновить',
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                    const SizedBox(height: 20),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
                     _buildLessonsTable(),
                   ],
                 ),
@@ -349,9 +372,8 @@ class _ListActivitiesState extends State<ListActivities> {
         Text(
           '$_selectedClass    $_selectedSubject',
           style: const TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+              fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black87),
         ),
-        const SizedBox(height: 10),
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -448,7 +470,7 @@ class _ListActivitiesState extends State<ListActivities> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 0),
                     RichText(
                       text: TextSpan(
                         children: [
@@ -463,7 +485,7 @@ class _ListActivitiesState extends State<ListActivities> {
                       ),
                     ),
                     if (_teacherId != lesson['teacherId'])
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 0),
                     if (_teacherId != lesson['teacherId'])
                       RichText(
                         text: TextSpan(
@@ -624,18 +646,19 @@ class _ListActivitiesState extends State<ListActivities> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 5),
-        TextFormField(
+        AppTextFormField(
           controller: controller,
-          decoration: InputDecoration(
-            labelText: '$label',
-            border: OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.calendar_today),
-              onPressed: () => _selectDate(context, controller),
+          labelText: label,
+          readOnly:
+              true, // Make it read-only if you want to prevent manual input
+          onTap: () => _selectDate(context, controller),
+          suffixIcon: IconButton(
+            icon: const Icon(
+              Icons.calendar_today,
+              size: 20,
             ),
+            onPressed: () => _selectDate(context, controller),
           ),
-          keyboardType: TextInputType.datetime,
         ),
       ],
     );
@@ -646,40 +669,21 @@ class _ListActivitiesState extends State<ListActivities> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 5),
-        Container(
-          child: DropdownButtonFormField<String>(
-            dropdownColor: Colors.white,
-            decoration: InputDecoration(
-              labelText: 'Класс',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.0),
-                borderSide: const BorderSide(color: Colors.grey),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 10.0,
-                horizontal: 10.0,
-              ),
-            ),
-            isDense: true,
-            isExpanded: true,
-            items: _classes.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            value: _selectedClass != null && _selectedClass!.isNotEmpty
-                ? _selectedClass
-                : null,
-            onChanged: (String? newValue) async {
-              await _loadSubjects(_classMap[newValue]!);
-              setState(() {
-                _selectedClass = newValue!;
-                _selectedSubject = null;
-                _lessons.clear();
-              });
-            },
-          ),
+        AppDropdownField<String>(
+          labelText: 'Класс',
+          items: _classes,
+          value: _selectedClass != null && _selectedClass!.isNotEmpty
+              ? _selectedClass
+              : null,
+          onChanged: (String? newValue) async {
+            await _loadSubjects(_classMap[newValue]!);
+            setState(() {
+              _selectedClass = newValue!;
+              _selectedSubject = null;
+              _lessons.clear();
+            });
+          },
+          itemLabelBuilder: (value) => value,
         ),
       ],
     );
@@ -701,35 +705,16 @@ class _ListActivitiesState extends State<ListActivities> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 10),
-        Container(
-          child: DropdownButtonFormField<String>(
-            dropdownColor: Colors.white,
-            decoration: InputDecoration(
-              labelText: 'Предмет',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.0),
-                borderSide: const BorderSide(color: Colors.grey),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 10.0,
-                horizontal: 10.0,
-              ),
-            ),
-            isDense: true,
-            isExpanded: true,
-            items: _subjects.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            value: _selectedSubject,
-            onChanged: (String? newValue) {
-              setState(() {
-                _selectedSubject = newValue!;
-              });
-            },
-          ),
+        AppDropdownField<String>(
+          labelText: 'Предмет',
+          items: _subjects,
+          value: _selectedSubject,
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedSubject = newValue!;
+            });
+          },
+          itemLabelBuilder: (String value) => value,
         ),
       ],
     );

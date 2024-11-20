@@ -356,7 +356,10 @@ class _AddLessonPageState extends State<AddLessonPage> {
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        title: const Text('Добавить занятие'),
+        title: Text(
+          'Добавить занятие',
+          style: TextStyle(fontSize: Cst.appBarTextSize, color: Cst.color),
+        ),
         scrolledUnderElevation: 0.0,
         centerTitle: true,
         backgroundColor: Cst.backgroundAppBar,
@@ -373,131 +376,92 @@ class _AddLessonPageState extends State<AddLessonPage> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: AppTextFormField(
                             controller: _dateController,
-                            decoration: InputDecoration(
-                              labelText: 'Дата урока',
-                              border: const OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                icon: const Icon(Icons.calendar_today),
-                                onPressed: () => _selectDate(context),
-                              ),
+                            labelText: 'Дата урока',
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.calendar_today),
+                              onPressed: () => _selectDate(context),
                             ),
+                            readOnly: true, // Makes the field non-editable
+                            onTap: () => _selectDate(
+                                context), // Allows date selection on tap
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: DropdownButtonFormField<Map<String, dynamic>>(
-                            dropdownColor: Colors.white,
+                          child: AppDropdownField<Map<String, dynamic>>(
                             value: _selectedClass,
-                            items: _classes.map((classItem) {
-                              return DropdownMenuItem<Map<String, dynamic>>(
-                                value: classItem,
-                                child: Text(classItem['clsName']),
-                              );
-                            }).toList(),
+                            items: _classes,
                             onChanged: (value) {
                               setState(() {
                                 _selectedClass = value;
                                 _fetchSubjects(value!['id']);
                               });
                             },
-                            decoration: const InputDecoration(
-                              labelText: 'Класс',
-                              border: OutlineInputBorder(),
-                            ),
+                            itemLabelBuilder: (item) => item[
+                                'clsName'], // Builds the label for each item
+                            labelText: 'Класс',
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    DropdownButtonFormField<Map<String, dynamic>>(
-                      dropdownColor: Colors.white,
+                    AppDropdownField<Map<String, dynamic>>(
                       value: _selectedSubject,
-                      items: _subjects.map((subjectItem) {
-                        return DropdownMenuItem<Map<String, dynamic>>(
-                          value: subjectItem,
-                          child: Text(subjectItem['name']),
-                        );
-                      }).toList(),
+                      items: _subjects,
                       onChanged: (value) {
                         setState(() {
                           _selectedSubject = value;
                           _fetchThemes(value!['id'], _selectedClass!['id']);
                         });
                       },
-                      decoration: const InputDecoration(
-                        labelText: 'Предмет',
-                        border: OutlineInputBorder(),
-                      ),
+                      itemLabelBuilder: (item) =>
+                          item['name'], // Builds the label for each subject
+                      labelText: 'Предмет',
                     ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
-                          child: DropdownButtonFormField<Map<String, dynamic>>(
-                            dropdownColor: Colors.white,
+                          child: AppDropdownField<Map<String, dynamic>>(
                             value: _selectedGradeType,
-                            items: _gradeTypes.map((type) {
-                              return DropdownMenuItem<Map<String, dynamic>>(
-                                value: type,
-                                child: Text(type['name']),
-                              );
-                            }).toList(),
+                            items: _gradeTypes,
                             onChanged: (value) {
                               setState(() {
                                 _selectedGradeType = value;
                               });
                             },
-                            decoration: const InputDecoration(
-                              labelText: 'Тип занятия',
-                              border: OutlineInputBorder(),
-                            ),
+                            itemLabelBuilder: (item) => item[
+                                'name'], // Builds the label for each grade type
+                            labelText: 'Тип занятия',
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: TextFormField(
+                          child: AppTextFormField(
                             controller: _maxPointsController,
-                            decoration: const InputDecoration(
-                              labelText: 'Максимальный балл',
-                              border: OutlineInputBorder(),
-                            ),
+                            labelText: 'Максимальный балл',
                             keyboardType: TextInputType.number,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    DropdownButtonFormField<Map<String, dynamic>?>(
-                      dropdownColor: Colors.white,
+                    AppDropdownField<Map<String, dynamic>?>(
                       value: _selectedTheme,
-                      items: _themes
-                          .map((theme) =>
-                              DropdownMenuItem<Map<String, dynamic>?>(
-                                value: theme,
-                                child: Container(
-                                  child: Text(
-                                    theme['name'],
-                                    softWrap: true,
-                                    maxLines: null,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
+                      items: _themes,
                       onChanged: (value) {
                         setState(() {
                           _selectedTheme = value;
                         });
                       },
-                      decoration: const InputDecoration(
-                        labelText: 'Тема урока',
-                        border: OutlineInputBorder(),
-                      ),
-                      isExpanded: true,
+                      itemLabelBuilder: (item) =>
+                          item!['name'], // Extract and display the theme name
+                      labelText: 'Тема урока',
                     ),
-                    const SizedBox(height: 10),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 5),
+                    // const SizedBox(height: 20),
                     Center(
                       child: CustomElevatedButton(
                         onPressed: () async {

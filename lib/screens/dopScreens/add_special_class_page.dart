@@ -69,8 +69,9 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
   }
 
   Future<void> _fetchRateTypes() async {
-    if (_selectedSubject == null)
+    if (_selectedSubject == null) {
       return; // Проверка на случай, если предмет не выбран
+    }
 
     setState(() => _isLoading = true);
 
@@ -81,6 +82,10 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
             await widget.userService.getLstRateType(subjectId!, context);
         setState(() {
           _rateTypes = rateTypes;
+          // Если только одна запись, устанавливаем её как выбранную
+          if (_rateTypes.length == 1) {
+            _selectedRateType = _rateTypes.first['id'].toString();
+          }
         });
       }
     } catch (e) {
@@ -88,6 +93,28 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  void _handleHourInput(int index, String value) {
+    final controller = _dayControllers.entries.elementAt(index).value;
+
+    // Убираем ведущие нули
+    final sanitizedValue = value.replaceFirst(RegExp(r'^0+'), '');
+
+    // Если поле становится пустым, возвращаем значение '0'
+    if (sanitizedValue.isEmpty) {
+      controller.text = '0';
+      controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: controller.text.length),
+      );
+      return;
+    }
+
+    // Обновляем значение без ведущих нулей
+    controller.text = sanitizedValue;
+    controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: controller.text.length),
+    );
   }
 
   Future<void> _fetchSubjects() async {
@@ -118,6 +145,22 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
 
   Future<void> _saveSpecialClass() async {
     final className = _classNameController.text;
+
+    // Проверка на заполненность обязательных полей
+    if (className.isEmpty ||
+        _selectedSubject == null ||
+        _selectedRateType == null ||
+        _selectedPeriod == null) {
+      // Показываем сообщение об ошибке
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Пожалуйста, заполните все обязательные поля.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Прерываем выполнение метода
+    }
+
     final jsonLstDayNum = _dayControllers.entries.map((entry) {
       int dayId = _getDayId(entry.key);
       return {
@@ -190,7 +233,10 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        title: const Text('Добавление спец.класса'),
+        title: Text(
+          'Добавление спец.класса',
+          style: TextStyle(fontSize: Cst.appBarTextSize, color: Cst.color),
+        ),
         centerTitle: true,
         scrolledUnderElevation: 0.0,
         backgroundColor: Cst.backgroundAppBar,
@@ -203,24 +249,23 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextFormField(
+                    AppTextFormField(
                       controller: _classNameController,
-                      decoration: CustomInputDecoration.getDecoration(
-                        labelText: 'Наименование класса',
-                        isSpecialClass: true,
-                      ),
+                      labelText: 'Наименование класса',
                     ),
                     const SizedBox(height: 10),
-                    DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      dropdownColor: Colors.white,
+                    AppDropdownField<String>(
                       value: _selectedSubject,
-                      items: _subjects.map((subject) {
-                        return DropdownMenuItem<String>(
-                          value: subject['id'].toString(),
-                          child: Text(subject['name']),
+                      items: _subjects
+                          .map((subject) => subject['id'].toString())
+                          .toList(),
+                      labelText: 'Предмет',
+                      itemLabelBuilder: (value) {
+                        final subject = _subjects.firstWhere(
+                          (element) => element['id'].toString() == value,
                         );
-                      }).toList(),
+                        return subject != null ? subject['name'] : '';
+                      },
                       onChanged: (value) {
                         setState(() {
                           _selectedSubject = value;
@@ -231,61 +276,46 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
                           _fetchRateTypes();
                         }
                       },
-                      decoration: CustomInputDecoration.getDecoration(
-                        labelText: 'Предмет',
-                        isSpecialClass: true,
-                      ),
                     ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isDense: true,
-                            isExpanded: true,
-                            dropdownColor: Colors.white,
+                          child: AppDropdownField<String>(
                             value: _selectedRateType,
-                            items: _rateTypes.map((type) {
-                              return DropdownMenuItem<String>(
-                                value: type['id'].toString(),
-                                child: Text(type['typeName']),
+                            items: _rateTypes
+                                .map((type) => type['id'].toString())
+                                .toList(),
+                            labelText: 'Тип оценивания',
+                            itemLabelBuilder: (value) {
+                              final type = _rateTypes.firstWhere(
+                                (element) => element['id'].toString() == value,
                               );
-                            }).toList(),
+                              return type != null ? type['typeName'] : '';
+                            },
                             onChanged: (value) {
                               setState(() {
                                 _selectedRateType = value;
                               });
                             },
-                            decoration: CustomInputDecoration.getDecoration(
-                              labelText: 'Тип оценивания',
-                              isSpecialClass: true,
-                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: DropdownButtonFormField<String>(
-                            dropdownColor: Colors.white,
+                          child: AppDropdownField<String>(
                             value: _selectedPeriod,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Четверть',
-                                child: Text('Четверть'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Полугодие',
-                                child: Text('Полугодие'),
-                              ),
-                            ],
+                            items: ['Четверть', 'Полугодие'],
+                            labelText: 'Период',
+                            itemLabelBuilder: (value) {
+                              if (value == 'Четверть') return 'Четверть';
+                              if (value == 'Полугодие') return 'Полугодие';
+                              return '';
+                            },
                             onChanged: (value) {
                               setState(() {
                                 _selectedPeriod = value;
                               });
                             },
-                            decoration: CustomInputDecoration.getDecoration(
-                              labelText: 'Период',
-                              isSpecialClass: true,
-                            ),
                           ),
                         ),
                       ],
@@ -317,25 +347,32 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
           child: Row(
             children: [
               Expanded(
-                child: TextFormField(
+                child: AppTextFormField(
                   controller: _dayControllers.entries.elementAt(i).value
                     ..text =
                         _dayControllers.entries.elementAt(i).value.text.isEmpty
                             ? '0'
                             : _dayControllers.entries.elementAt(i).value.text,
-                  decoration: CustomInputDecoration.getDecoration(
-                    labelText: _dayControllers.entries.elementAt(i).key,
-                  ),
+                  labelText: _dayControllers.entries.elementAt(i).key,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                   ],
+                  onTap: () {
+                    if (_dayControllers.entries.elementAt(i).value.text ==
+                        '0') {
+                      _dayControllers.entries.elementAt(i).value.clear();
+                    }
+                  },
+                  onChanged: (value) {
+                    _handleHourInput(i, value);
+                  },
                 ),
               ),
               const SizedBox(width: 8),
               if (i + 1 < _dayControllers.entries.length)
                 Expanded(
-                  child: TextFormField(
+                  child: AppTextFormField(
                     controller: _dayControllers.entries.elementAt(i + 1).value
                       ..text = _dayControllers.entries
                               .elementAt(i + 1)
@@ -344,13 +381,20 @@ class _AddSpecialClassPageState extends State<AddSpecialClassPage> {
                               .isEmpty
                           ? '0'
                           : _dayControllers.entries.elementAt(i + 1).value.text,
-                    decoration: CustomInputDecoration.getDecoration(
-                      labelText: _dayControllers.entries.elementAt(i + 1).key,
-                    ),
+                    labelText: _dayControllers.entries.elementAt(i + 1).key,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
+                    onTap: () {
+                      if (_dayControllers.entries.elementAt(i + 1).value.text ==
+                          '0') {
+                        _dayControllers.entries.elementAt(i + 1).value.clear();
+                      }
+                    },
+                    onChanged: (value) {
+                      _handleHourInput(i + 1, value);
+                    },
                   ),
                 ),
             ],

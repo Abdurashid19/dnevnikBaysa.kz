@@ -46,8 +46,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
       label: 'Мои классы',
     ),
     BottomNavigationBarItem(
-      icon: Icon(Icons.people),
-      label: 'Студенты',
+      icon: Icon(Icons.menu),
+      label: 'Меню',
     ),
   ];
 

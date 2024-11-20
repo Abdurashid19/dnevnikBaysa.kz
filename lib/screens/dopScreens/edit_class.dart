@@ -40,7 +40,9 @@ class _EditClassPageState extends State<EditClassPage> {
   void initState() {
     super.initState();
     _classNameController.text = widget.classItem['className'];
-    _selectedPeriod = widget.classItem['periodType'];
+    _selectedPeriod = widget.classItem['periodType'] == ''
+        ? 'Четверть'
+        : widget.classItem['periodType'];
     _initializeDayControllers();
     _fetchRateTypes();
     _fetchStudents();
@@ -219,7 +221,10 @@ class _EditClassPageState extends State<EditClassPage> {
     return Scaffold(
       backgroundColor: Cst.backgroundApp,
       appBar: AppBar(
-        title: const Text('Редактирование класса'),
+        title: Text(
+          'Редактирование класса',
+          style: TextStyle(fontSize: Cst.appBarTextSize, color: Cst.color),
+        ),
         centerTitle: true,
         scrolledUnderElevation: 0.0,
         backgroundColor: Cst.backgroundAppBar,
@@ -232,38 +237,33 @@ class _EditClassPageState extends State<EditClassPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextFormField(
+                    AppTextFormField(
                       enabled: isSpecialClass,
                       controller: _classNameController,
-                      decoration: CustomInputDecoration.getDecoration(
-                        labelText: 'Наименование класса',
-                        isSpecialClass: isSpecialClass,
-                      ),
+                      labelText: 'Наименование класса',
                     ),
                     const SizedBox(height: 10),
-                    TextFormField(
+                    AppTextFormField(
                       initialValue: widget.classItem['subjectName'],
                       enabled: false,
-                      decoration: const InputDecoration(
-                        labelText: 'Предмет',
-                        border: OutlineInputBorder(),
-                      ),
+                      labelText: 'Предмет',
                     ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isDense: true,
-                            isExpanded: true,
-                            dropdownColor: Colors.white,
+                          child: AppDropdownField<String>(
                             value: _selectedRateType,
-                            items: _rateTypes.map((type) {
-                              return DropdownMenuItem<String>(
-                                value: type['id'].toString(),
-                                child: Text(type['typeName']),
+                            items: _rateTypes
+                                .map((type) => type['id'].toString())
+                                .toList(),
+                            labelText: 'Тип оценивания',
+                            itemLabelBuilder: (value) {
+                              final type = _rateTypes.firstWhere(
+                                (element) => element['id'].toString() == value,
                               );
-                            }).toList(),
+                              return type['typeName'] ?? '';
+                            },
                             onChanged: isSpecialClass
                                 ? (value) {
                                     setState(() {
@@ -271,27 +271,19 @@ class _EditClassPageState extends State<EditClassPage> {
                                     });
                                   }
                                 : null,
-                            decoration: CustomInputDecoration.getDecoration(
-                              labelText: 'Тип оценивания',
-                              isSpecialClass: isSpecialClass,
-                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: DropdownButtonFormField<String>(
-                            dropdownColor: Colors.white,
+                          child: AppDropdownField<String>(
                             value: _selectedPeriod,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Четверть',
-                                child: Text('Четверть'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Полугодие',
-                                child: Text('Полугодие'),
-                              ),
-                            ],
+                            items: ['Четверть', 'Полугодие'],
+                            labelText: 'Период',
+                            itemLabelBuilder: (value) {
+                              if (value == 'Четверть') return 'Четверть';
+                              if (value == 'Полугодие') return 'Полугодие';
+                              return '';
+                            },
                             onChanged: isSpecialClass
                                 ? (value) {
                                     setState(() {
@@ -299,10 +291,6 @@ class _EditClassPageState extends State<EditClassPage> {
                                     });
                                   }
                                 : null,
-                            decoration: CustomInputDecoration.getDecoration(
-                              labelText: 'Период',
-                              isSpecialClass: isSpecialClass,
-                            ),
                           ),
                         ),
                       ],
@@ -328,8 +316,7 @@ class _EditClassPageState extends State<EditClassPage> {
                     if (isSpecialClass)
                       ListView.builder(
                         shrinkWrap: true,
-                        physics:
-                            const NeverScrollableScrollPhysics(), // Без отдельного скролла
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: _students.length,
                         itemBuilder: (context, index) {
                           final student = _students[index];
@@ -353,6 +340,28 @@ class _EditClassPageState extends State<EditClassPage> {
     );
   }
 
+  void _handleHourInput(int index, String value) {
+    final controller = _dayControllers.entries.elementAt(index).value;
+
+    // Убираем ведущие нули
+    final sanitizedValue = value.replaceFirst(RegExp(r'^0+'), '');
+
+    // Если поле становится пустым, возвращаем значение '0'
+    if (sanitizedValue.isEmpty) {
+      controller.text = '0';
+      controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: controller.text.length),
+      );
+      return;
+    }
+
+    // Обновляем значение без ведущих нулей
+    controller.text = sanitizedValue;
+    controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: controller.text.length),
+    );
+  }
+
   // Layout with two days per row
   Widget _buildPairLayout() {
     final List<Widget> rows = [];
@@ -364,26 +373,32 @@ class _EditClassPageState extends State<EditClassPage> {
           child: Row(
             children: [
               Expanded(
-                child: TextFormField(
+                child: AppTextFormField(
                   controller: _dayControllers.entries.elementAt(i).value
                     ..text =
                         _dayControllers.entries.elementAt(i).value.text.isEmpty
                             ? '0'
                             : _dayControllers.entries.elementAt(i).value.text,
-                  decoration: CustomInputDecoration.getDecoration(
-                    labelText: _dayControllers.entries.elementAt(i).key,
-                    // isSpecialClass: isSpecial,
-                  ),
+                  labelText: _dayControllers.entries.elementAt(i).key,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly, // Allow only digits
+                    FilteringTextInputFormatter.digitsOnly,
                   ],
+                  onTap: () {
+                    if (_dayControllers.entries.elementAt(i).value.text ==
+                        '0') {
+                      _dayControllers.entries.elementAt(i).value.clear();
+                    }
+                  },
+                  onChanged: (value) {
+                    _handleHourInput(i, value);
+                  },
                 ),
               ),
               const SizedBox(width: 8),
               if (i + 1 < _dayControllers.entries.length)
                 Expanded(
-                  child: TextFormField(
+                  child: AppTextFormField(
                     controller: _dayControllers.entries.elementAt(i + 1).value
                       ..text = _dayControllers.entries
                               .elementAt(i + 1)
@@ -392,13 +407,20 @@ class _EditClassPageState extends State<EditClassPage> {
                               .isEmpty
                           ? '0'
                           : _dayControllers.entries.elementAt(i + 1).value.text,
-                    decoration: CustomInputDecoration.getDecoration(
-                      labelText: _dayControllers.entries.elementAt(i + 1).key,
-                    ),
+                    labelText: _dayControllers.entries.elementAt(i + 1).key,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
+                    onTap: () {
+                      if (_dayControllers.entries.elementAt(i + 1).value.text ==
+                          '0') {
+                        _dayControllers.entries.elementAt(i + 1).value.clear();
+                      }
+                    },
+                    onChanged: (value) {
+                      _handleHourInput(i + 1, value);
+                    },
                   ),
                 ),
             ],
